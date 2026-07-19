@@ -9,23 +9,69 @@ import (
 	"repin/internal/pkg/migration"
 )
 
+// Sections shared by the per-binary configs below. Every env tag lives here
+// exactly once, so a narrow config can never drift from the full one.
+
+type HTTP struct {
+	Host string `env:"HTTP_SERVER_HOST" envDefault:"0.0.0.0"`
+	Port string `env:"HTTP_SERVER_PORT" envDefault:"8080"`
+}
+
+func (h HTTP) Config() httpx.Config {
+	return httpx.Config{Host: h.Host, Port: h.Port}
+}
+
+type Database struct {
+	URL    string `env:"DATABASE_URL"`
+	Schema string `env:"DATABASE_SCHEMA" envDefault:"public"`
+}
+
+func (d Database) Config() db.Config {
+	return db.Config{URL: d.URL, Schema: d.Schema}
+}
+
+type Migration struct {
+	Dir   string `env:"MIGRATIONS_DIR" envDefault:"migrations"`
+	Table string `env:"MIGRATIONS_TABLE" envDefault:"schema_migrations"`
+}
+
+func (m Migration) Config() migration.Config {
+	return migration.Config{Dir: m.Dir, Table: m.Table}
+}
+
+type Logger struct {
+	Debug bool `env:"LOGGER_DEBUG" envDefault:"true"`
+}
+
+func (l Logger) Config() logger.Config {
+	return logger.Config{Debug: l.Debug}
+}
+
+// CLIConfig is everything cmd/cli reads. Migrations touch neither Telegram nor
+// object storage, so demanding those credentials would be a lie.
+type CLIConfig struct {
+	Database  Database
+	Migration Migration
+	Logger    Logger
+}
+
+// APIConfig is everything cmd/http reads: it only ever queries Postgres.
+type APIConfig struct {
+	HTTP     HTTP
+	Database Database
+	Logger   Logger
+}
+
+// Config is the full set, used by the binaries that genuinely need it all:
+// cmd/sync, cmd/bot and cmd/worker.
 type Config struct {
 	AppEnv string `env:"APP_ENV" envDefault:"develop"`
 
-	HTTP struct {
-		Host string `env:"HTTP_SERVER_HOST" envDefault:"0.0.0.0"`
-		Port string `env:"HTTP_SERVER_PORT" envDefault:"8080"`
-	}
+	HTTP HTTP
 
-	Database struct {
-		URL    string `env:"DATABASE_URL"`
-		Schema string `env:"DATABASE_SCHEMA" envDefault:"public"`
-	}
+	Database Database
 
-	Migration struct {
-		Dir   string `env:"MIGRATIONS_DIR" envDefault:"migrations"`
-		Table string `env:"MIGRATIONS_TABLE" envDefault:"schema_migrations"`
-	}
+	Migration Migration
 
 	Telegram struct {
 		AppID          int           `env:"TELEGRAM_API_ID"`
@@ -46,7 +92,7 @@ type Config struct {
 		FallbackModel string        `env:"OPENROUTER_FALLBACK_MODEL" envDefault:"openai/gpt-4o-mini"`
 		Timeout       time.Duration `env:"OPENROUTER_TIMEOUT" envDefault:"90s"`
 		MaxRetries    int           `env:"OPENROUTER_MAX_RETRIES" envDefault:"2"`
-		Referer       string        `env:"OPENROUTER_REFERER"`
+		Referer       *string       `env:"OPENROUTER_REFERER"`
 	}
 
 	Worker struct {
@@ -66,9 +112,7 @@ type Config struct {
 		Bucket    string `env:"MINIO_BUCKET"`
 	}
 
-	Logger struct {
-		Debug bool `env:"LOGGER_DEBUG" envDefault:"true"`
-	}
+	Logger Logger
 }
 
 func (c Config) TelegramBotToken() string {
@@ -81,6 +125,10 @@ func (c Config) ProxyURL() string {
 
 func (c Config) OpenRouterKey() string {
 	return stringOrEmpty(c.OpenRouter.APIKey)
+}
+
+func (c Config) OpenRouterReferer() string {
+	return stringOrEmpty(c.OpenRouter.Referer)
 }
 
 func (c Config) FaviconDir() string {
@@ -96,17 +144,17 @@ func stringOrEmpty(s *string) string {
 }
 
 func (c Config) PGConfig() db.Config {
-	return db.Config{URL: c.Database.URL, Schema: c.Database.Schema}
+	return c.Database.Config()
 }
 
 func (c Config) MigrationConfig() migration.Config {
-	return migration.Config{Dir: c.Migration.Dir, Table: c.Migration.Table}
+	return c.Migration.Config()
 }
 
 func (c Config) LoggerConfig() logger.Config {
-	return logger.Config{Debug: c.Logger.Debug}
+	return c.Logger.Config()
 }
 
 func (c Config) HTTPConfig() httpx.Config {
-	return httpx.Config{Host: c.HTTP.Host, Port: c.HTTP.Port}
+	return c.HTTP.Config()
 }

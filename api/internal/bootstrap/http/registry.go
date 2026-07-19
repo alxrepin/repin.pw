@@ -21,7 +21,7 @@ import (
 )
 
 type registry struct {
-	cfg *bootstrap.Config
+	cfg *bootstrap.APIConfig
 	log *zerolog.Logger
 	db  *db.Client
 
@@ -57,9 +57,9 @@ func newRegistry(ctx context.Context) *registry {
 }
 
 func (r *registry) load(ctx context.Context) error {
-	r.cfg = config.MustLoad(bootstrap.Config{})
-	r.log = logger.MustLoad(r.cfg.LoggerConfig())
-	r.db = db.MustLoad(ctx, r.cfg.PGConfig())
+	r.cfg = config.MustLoad(bootstrap.APIConfig{})
+	r.log = logger.MustLoad(r.cfg.Logger.Config())
+	r.db = db.MustLoad(ctx, r.cfg.Database.Config())
 
 	r.repos.post = post.NewRepository(r.db)
 	r.repos.channel = channel.NewRepository(r.db)

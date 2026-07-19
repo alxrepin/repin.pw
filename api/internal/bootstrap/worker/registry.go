@@ -104,7 +104,7 @@ func (r *registry) registerSEO() error {
 		Model:         r.cfg.OpenRouter.Model,
 		FallbackModel: r.cfg.OpenRouter.FallbackModel,
 		MaxRetries:    r.cfg.OpenRouter.MaxRetries,
-		Referer:       r.cfg.OpenRouter.Referer,
+		Referer:       r.cfg.OpenRouterReferer(),
 	}, httpClient)
 
 	r.runner.Handle(domain.JobKindGenerateSEO, jobs.NewGenerateSEO(

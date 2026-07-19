@@ -16,7 +16,7 @@ func New(ctx context.Context) *App {
 
 	return &App{
 		registry: r,
-		server:   httpx.New(r.router, r.cfg.HTTPConfig()),
+		server:   httpx.New(r.router, r.cfg.HTTP.Config()),
 	}
 }
 

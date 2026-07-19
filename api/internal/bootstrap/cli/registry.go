@@ -18,7 +18,7 @@ import (
 )
 
 type registry struct {
-	cfg  *bootstrap.Config
+	cfg  *bootstrap.CLIConfig
 	log  *zerolog.Logger
 	db   *db.Client
 	root *cobra.Command
@@ -35,11 +35,11 @@ func newRegistry(ctx context.Context) *registry {
 }
 
 func (r *registry) load(ctx context.Context) error {
-	r.cfg = config.MustLoad(bootstrap.Config{})
-	r.log = logger.MustLoad(r.cfg.LoggerConfig())
-	r.db = db.MustLoad(ctx, r.cfg.PGConfig())
+	r.cfg = config.MustLoad(bootstrap.CLIConfig{})
+	r.log = logger.MustLoad(r.cfg.Logger.Config())
+	r.db = db.MustLoad(ctx, r.cfg.Database.Config())
 
-	migrator := migration.MustLoad(r.db, r.cfg.MigrationConfig())
+	migrator := migration.MustLoad(r.db, r.cfg.Migration.Config())
 
 	r.root = &cobra.Command{Use: "repin", Short: "repin.pw administration CLI"}
 	r.root.AddCommand(migration.NewCLI(migrator, r.cfg.Migration.Dir))
