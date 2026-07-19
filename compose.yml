@@ -45,9 +45,10 @@ services:
       context: "./api"
       dockerfile: "../.docker/container/api/Dockerfile"
     command: ["./bin/cli", "migrations", "up"]
+    # cmd/cli loads bootstrap.CLIConfig — migrations need the database and
+    # nothing else, so no env_file and no credentials it would never use.
     environment:
-      DATABASE_URL: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable"
-      DATABASE_SCHEMA: "public"
+      DATABASE_URL: "${DATABASE_URL}"
     depends_on:
       postgres:
         condition: service_healthy
@@ -58,19 +59,10 @@ services:
       context: "./api"
       dockerfile: "../.docker/container/api/Dockerfile"
     command: ["./bin/http"]
+    # cmd/http loads bootstrap.APIConfig: Postgres only. Host and port fall back
+    # to 0.0.0.0:8080 from the config defaults.
     environment:
-      HTTP_SERVER_HOST: "0.0.0.0"
-      HTTP_SERVER_PORT: "8080"
-      DATABASE_URL: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable"
-      DATABASE_SCHEMA: "public"
-      MINIO_ENDPOINT: "minio:9000"
-      MINIO_ACCESS_KEY: "${MINIO_ACCESS_KEY}"
-      MINIO_SECRET_KEY: "${MINIO_SECRET_KEY}"
-      MINIO_BUCKET: "${MINIO_BUCKET}"
-      TELEGRAM_API_ID: "${TELEGRAM_API_ID}"
-      TELEGRAM_API_HASH: "${TELEGRAM_API_HASH}"
-      TELEGRAM_PHONE: "${TELEGRAM_PHONE}"
-      TELEGRAM_CHANNEL: "${TELEGRAM_CHANNEL}"
+      DATABASE_URL: "${DATABASE_URL}"
     ports:
       - "127.0.0.1:8080:8080"
     depends_on:
@@ -89,20 +81,14 @@ services:
       NODE_ENV: "production"
       PORT: "3000"
       API_INTERNAL_URL: "http://api:8080"
-      # Public origin for canonical links. Read at runtime, so a domain change
-      # needs `docker compose up -d web`, not a rebuild.
       PUBLIC_SITE_URL: "${PUBLIC_SITE_URL:-}"
     volumes:
-      # Channel avatar written by sync/bot, served as /favicon/favicon.jpg.
       - "./.docker/data/favicon:/app/dist/client/favicon:ro"
     ports:
       - "127.0.0.1:3000:3000"
     depends_on:
       - api
 
-  # Watches the channel via a bot account (must be a channel admin):
-  # imports new/edited posts, removes deleted ones, refreshes channel info.
-  # Opt-in (needs TELEGRAM_BOT_TOKEN): `make bot` / `docker compose --profile bot up -d`.
   bot:
     build:
       context: "./api"
@@ -110,20 +96,9 @@ services:
     command: ["./bin/bot"]
     profiles: ["bot"]
     restart: unless-stopped
+    env_file: ".env"
     environment:
-      DATABASE_URL: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable"
-      DATABASE_SCHEMA: "public"
-      MINIO_ENDPOINT: "minio:9000"
-      MINIO_ACCESS_KEY: "${MINIO_ACCESS_KEY}"
-      MINIO_SECRET_KEY: "${MINIO_SECRET_KEY}"
-      MINIO_BUCKET: "${MINIO_BUCKET}"
-      TELEGRAM_API_ID: "${TELEGRAM_API_ID}"
-      TELEGRAM_API_HASH: "${TELEGRAM_API_HASH}"
-      TELEGRAM_PHONE: "${TELEGRAM_PHONE}"
-      TELEGRAM_CHANNEL: "${TELEGRAM_CHANNEL}"
-      TELEGRAM_BOT_TOKEN: "${TELEGRAM_BOT_TOKEN}"
-      TELEGRAM_CHANNEL_REFRESH_INTERVAL: "${TELEGRAM_CHANNEL_REFRESH_INTERVAL:-6h}"
-      PROXY_URL: "${PROXY_URL:-}"
+      # Container path, paired with the mount below.
       FAVICON_DIR: "/app/var/favicon"
     volumes:
       - "./.docker/data/telegram:/app/var/telegram"
@@ -134,35 +109,16 @@ services:
       migrate:
         condition: service_completed_successfully
 
-  # Drains the job queue: downloads post media and generates SEO metadata.
-  # Needs a Telegram session — either TELEGRAM_BOT_TOKEN (preferred: it logs in
-  # unattended) or a user session left behind by a completed `make sync`.
-  # Without one it restarts until a session appears.
   worker:
     build:
       context: "./api"
       dockerfile: "../.docker/container/api/Dockerfile"
     command: ["./bin/worker"]
     restart: unless-stopped
+    env_file: ".env"
     environment:
-      DATABASE_URL: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable"
-      DATABASE_SCHEMA: "public"
-      MINIO_ENDPOINT: "minio:9000"
-      MINIO_ACCESS_KEY: "${MINIO_ACCESS_KEY}"
-      MINIO_SECRET_KEY: "${MINIO_SECRET_KEY}"
-      MINIO_BUCKET: "${MINIO_BUCKET}"
-      TELEGRAM_API_ID: "${TELEGRAM_API_ID}"
-      TELEGRAM_API_HASH: "${TELEGRAM_API_HASH}"
-      TELEGRAM_PHONE: "${TELEGRAM_PHONE}"
-      TELEGRAM_CHANNEL: "${TELEGRAM_CHANNEL}"
-      TELEGRAM_BOT_TOKEN: "${TELEGRAM_BOT_TOKEN:-}"
-      PROXY_URL: "${PROXY_URL:-}"
-      OPENROUTER_API_KEY: "${OPENROUTER_API_KEY:-}"
-      OPENROUTER_MODEL: "${OPENROUTER_MODEL:-google/gemini-2.5-flash-lite}"
-      OPENROUTER_FALLBACK_MODEL: "${OPENROUTER_FALLBACK_MODEL:-openai/gpt-4o-mini}"
       # Sent as the HTTP-Referer header so OpenRouter can attribute the traffic.
       OPENROUTER_REFERER: "${PUBLIC_SITE_URL:-}"
-      WORKER_CONCURRENCY: "${WORKER_CONCURRENCY:-2}"
     volumes:
       - "./.docker/data/telegram:/app/var/telegram"
     depends_on:
@@ -171,7 +127,6 @@ services:
       migrate:
         condition: service_completed_successfully
 
-  # Run on demand: `docker compose run --rm sync` (interactive Telegram login).
   sync:
     build:
       context: "./api"
@@ -180,18 +135,9 @@ services:
     profiles: ["tools"]
     stdin_open: true
     tty: true
+    env_file: ".env"
     environment:
-      DATABASE_URL: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable"
-      DATABASE_SCHEMA: "public"
-      MINIO_ENDPOINT: "minio:9000"
-      MINIO_ACCESS_KEY: "${MINIO_ACCESS_KEY}"
-      MINIO_SECRET_KEY: "${MINIO_SECRET_KEY}"
-      MINIO_BUCKET: "${MINIO_BUCKET}"
-      TELEGRAM_API_ID: "${TELEGRAM_API_ID}"
-      TELEGRAM_API_HASH: "${TELEGRAM_API_HASH}"
-      TELEGRAM_PHONE: "${TELEGRAM_PHONE}"
-      TELEGRAM_CHANNEL: "${TELEGRAM_CHANNEL}"
-      PROXY_URL: "${PROXY_URL:-}"
+      # Container path, paired with the mount below.
       FAVICON_DIR: "/app/var/favicon"
     volumes:
       - "./.docker/data/telegram:/app/var/telegram"
