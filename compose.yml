@@ -33,12 +33,19 @@ services:
     image: minio/mc
     depends_on:
       - minio
-    entrypoint: >
-      /bin/sh -c "
-      until mc alias set repin http://minio:9000 ${MINIO_ACCESS_KEY} ${MINIO_SECRET_KEY}; do sleep 2; done;
-      mc mb -p repin/${MINIO_BUCKET} || true;
-      mc anonymous set download repin/${MINIO_BUCKET} || true;
-      "
+    env_file: ".env"
+    # `mc anonymous set download` also grants ListBucket, which lets anyone
+    # enumerate every stored object. The bucket is reachable from the internet,
+    # so grant GetObject only. $$ escapes compose interpolation: the shell in
+    # the container expands these, and the mc image has no sed or envsubst.
+    entrypoint:
+      - "/bin/sh"
+      - "-c"
+      - |
+        until mc alias set repin http://minio:9000 "$$MINIO_ACCESS_KEY" "$$MINIO_SECRET_KEY"; do sleep 2; done
+        mc mb -p "repin/$$MINIO_BUCKET" || true
+        printf '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"AWS":["*"]},"Action":["s3:GetObject"],"Resource":["arn:aws:s3:::%s/*"]}]}' "$$MINIO_BUCKET" > /tmp/policy.json
+        mc anonymous set-json /tmp/policy.json "repin/$$MINIO_BUCKET"
 
   migrate:
     build:
@@ -59,18 +66,13 @@ services:
       context: "./api"
       dockerfile: "../.docker/container/api/Dockerfile"
     command: ["./bin/http"]
-    # cmd/http loads bootstrap.APIConfig: Postgres plus storage, since media is
-    # streamed through /api/v1/media instead of being exposed directly. Still no
-    # Telegram or OpenRouter credentials — this is the one service facing the
-    # internet. Host and port fall back to 0.0.0.0:8080 from the config defaults.
+    # cmd/http loads bootstrap.APIConfig: Postgres only. Media is served from
+    # the bucket's own origin, so the API needs that address but none of the
+    # storage credentials — this is the one service facing the internet. Host
+    # and port fall back to 0.0.0.0:8080 from the config defaults.
     environment:
       DATABASE_URL: "${DATABASE_URL}"
-      MINIO_ENDPOINT: "${MINIO_ENDPOINT}"
-      MINIO_ACCESS_KEY: "${MINIO_ACCESS_KEY}"
-      MINIO_SECRET_KEY: "${MINIO_SECRET_KEY}"
-      MINIO_BUCKET: "${MINIO_BUCKET}"
-      # Origin used to build absolute media links.
-      PUBLIC_API_URL: "${PUBLIC_API_URL:-}"
+      MEDIA_BASE_URL: "${MEDIA_BASE_URL:-}"
     ports:
       - "127.0.0.1:8080:8080"
     depends_on:

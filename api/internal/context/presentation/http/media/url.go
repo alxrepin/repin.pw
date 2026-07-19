@@ -1,17 +1,19 @@
 // Package media builds the public links under which stored objects are served.
 package media
 
-const routePrefix = "/api/v1/media/"
-
 // URL turns a storage key into the link clients fetch. base is the public
-// origin of the API; when it is empty the link stays root-relative, which keeps
-// the API usable without knowing how it is exposed.
+// origin serving the bucket; when it is empty the key is returned untouched,
+// which keeps the API usable before that origin is configured.
 func URL(base, key string) string {
 	if key == "" {
 		return ""
 	}
 
-	return base + routePrefix + key
+	if base == "" {
+		return key
+	}
+
+	return base + "/" + key
 }
 
 // URLPtr is the optional-field variant: no key means no link.

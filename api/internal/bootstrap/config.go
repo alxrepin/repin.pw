@@ -63,21 +63,19 @@ type CLIConfig struct {
 	Logger    Logger
 }
 
-// APIConfig is everything cmd/http reads. It needs object storage because media
-// is streamed through /api/v1/media rather than exposed directly.
+// APIConfig is everything cmd/http reads: it only ever queries Postgres. Media
+// is served straight from the bucket's public origin, so the API needs the
+// address to build links but no storage credentials.
 type APIConfig struct {
 	HTTP     HTTP
 	Database Database
-	Storage  Storage
 	Logger   Logger
 
-	// Public origin used to build absolute media links. Left empty the API
-	// falls back to root-relative paths.
-	PublicURL *string `env:"PUBLIC_API_URL"`
+	MediaURL *string `env:"MEDIA_BASE_URL"`
 }
 
 func (c APIConfig) MediaBaseURL() string {
-	return strings.TrimRight(stringOrEmpty(c.PublicURL), "/")
+	return strings.TrimRight(stringOrEmpty(c.MediaURL), "/")
 }
 
 // Config is the full set, used by the binaries that genuinely need it all:

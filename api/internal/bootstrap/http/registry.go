@@ -10,9 +10,7 @@ import (
 	"repin/internal/context/infrastructure/db/postgres/channel"
 	"repin/internal/context/infrastructure/db/postgres/media"
 	"repin/internal/context/infrastructure/db/postgres/post"
-	"repin/internal/context/infrastructure/storage/minio"
 	channelget "repin/internal/context/presentation/http/channel/get"
-	mediaget "repin/internal/context/presentation/http/media/get"
 	postsget "repin/internal/context/presentation/http/posts/get"
 	postslist "repin/internal/context/presentation/http/posts/list"
 	"repin/internal/pkg/config"
@@ -36,13 +34,10 @@ type registry struct {
 		post    *service.PostService
 		channel *service.ChannelService
 	}
-	storage *minio.Client
-
 	controllers struct {
 		posts   *postslist.Controller
 		post    *postsget.Controller
 		channel *channelget.Controller
-		media   *mediaget.Controller
 	}
 	middleware struct {
 		log  *httpx.Log
@@ -66,15 +61,6 @@ func (r *registry) load(ctx context.Context) error {
 	r.log = logger.MustLoad(r.cfg.Logger.Config())
 	r.db = db.MustLoad(ctx, r.cfg.Database.Config())
 
-	storage, err := minio.NewClient(
-		r.cfg.Storage.Endpoint, r.cfg.Storage.AccessKey, r.cfg.Storage.SecretKey, r.cfg.Storage.Bucket,
-	)
-	if err != nil {
-		return err
-	}
-
-	r.storage = storage
-
 	r.repos.post = post.NewRepository(r.db)
 	r.repos.channel = channel.NewRepository(r.db)
 	r.repos.media = media.NewRepository(r.db)
@@ -87,14 +73,13 @@ func (r *registry) load(ctx context.Context) error {
 	r.controllers.posts = postslist.NewController(r.services.post, base)
 	r.controllers.post = postsget.NewController(r.services.post, base)
 	r.controllers.channel = channelget.NewController(r.services.channel, base)
-	r.controllers.media = mediaget.NewController(r.storage)
 
 	r.middleware.log = httpx.NewLog(r.log)
 	r.middleware.cors = httpx.NewCORS()
 
 	r.router = newRouter(
 		r.middleware.log, r.middleware.cors,
-		r.controllers.posts, r.controllers.post, r.controllers.channel, r.controllers.media,
+		r.controllers.posts, r.controllers.post, r.controllers.channel,
 	)
 
 	return validator.ValidateStructDependencies(r)
