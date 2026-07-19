@@ -1,0 +1,26 @@
+.env
+.env.*
+!.env.example
+
+/compose.override.yml
+
+.DS_Store
+
+.idea
+.fleet
+*.log
+
+/.docker/data/*
+!/.docker/data/.gitkeep
+
+# Channel avatar written by api sync/bot at runtime.
+/front/public/favicon/*
+!/front/public/favicon/.gitkeep
+
+/bin/
+/var/
+
+node_modules
+dist
+
+_hydrate-test.mjs

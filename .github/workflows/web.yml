@@ -1,0 +1,40 @@
+name: web
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "front/**"
+      - ".github/workflows/web.yml"
+  pull_request:
+    paths:
+      - "front/**"
+      - ".github/workflows/web.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: lint + typecheck + build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: front
+    steps:
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3"
+      - name: install
+        run: bun install --frozen-lockfile
+      - name: biome
+        run: bun run lint:check
+      - name: typecheck
+        run: bun run typecheck
+      - name: build
+        run: bun run build
+        env:
+          # Baked into the client bundle; any value validates the build in CI.
+          # The real origin comes from PUBLIC_API_URL at deploy time.
+          VITE_API_BASE_URL: http://api.example.com

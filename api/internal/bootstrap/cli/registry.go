@@ -1,0 +1,57 @@
+package cli
+
+import (
+	"context"
+
+	"github.com/rs/zerolog"
+	"github.com/spf13/cobra"
+
+	"repin/internal/bootstrap"
+	"repin/internal/context/application/usecase/rerender"
+	"repin/internal/context/infrastructure/db/postgres/post"
+	clipres "repin/internal/context/presentation/cli"
+	"repin/internal/pkg/config"
+	"repin/internal/pkg/db"
+	"repin/internal/pkg/logger"
+	"repin/internal/pkg/migration"
+	"repin/internal/pkg/validator"
+)
+
+type registry struct {
+	cfg  *bootstrap.Config
+	log  *zerolog.Logger
+	db   *db.Client
+	root *cobra.Command
+}
+
+func newRegistry(ctx context.Context) *registry {
+	r := new(registry)
+	if err := r.load(ctx); err != nil {
+		r.cleanup()
+		panic(err)
+	}
+
+	return r
+}
+
+func (r *registry) load(ctx context.Context) error {
+	r.cfg = config.MustLoad(bootstrap.Config{})
+	r.log = logger.MustLoad(r.cfg.LoggerConfig())
+	r.db = db.MustLoad(ctx, r.cfg.PGConfig())
+
+	migrator := migration.MustLoad(r.db, r.cfg.MigrationConfig())
+
+	r.root = &cobra.Command{Use: "repin", Short: "repin.pw administration CLI"}
+	r.root.AddCommand(migration.NewCLI(migrator, r.cfg.Migration.Dir))
+	r.root.AddCommand(clipres.NewRerenderCommand(
+		rerender.NewRerenderPosts(post.NewRepository(r.db), db.NewTxRunner(r.db)),
+	))
+
+	return validator.ValidateStructDependencies(r)
+}
+
+func (r *registry) cleanup() {
+	if r.db != nil {
+		r.db.Close()
+	}
+}

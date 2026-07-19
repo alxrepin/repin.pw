@@ -1,0 +1,30 @@
+version: "2"
+
+run:
+  timeout: 5m
+  tests: true
+
+linters:
+  default: none
+  enable:
+    - gosec
+    - bodyclose
+    - noctx
+    - exhaustive
+    - goconst
+    - gocyclo
+    - misspell
+    - prealloc
+    - unconvert
+    - unparam
+  settings:
+    exhaustive:
+      default-signifies-exhaustive: true
+    goconst:
+      ignore-tests: true
+
+output:
+  formats:
+    text:
+      path: stdout
+      colors: true

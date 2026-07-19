@@ -1,0 +1,49 @@
+name: api
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "api/**"
+      - ".github/workflows/api.yml"
+  pull_request:
+    paths:
+      - "api/**"
+      - ".github/workflows/api.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: api/go.mod
+          cache-dependency-path: api/go.sum
+      # v9 supports golangci-lint v2 configs; picks up api/.golangci.yml automatically.
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.12.2
+          working-directory: api
+
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: api
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: api/go.mod
+          cache-dependency-path: api/go.sum
+      - name: build
+        run: go build ./...
+      - name: test
+        run: go test ./...
