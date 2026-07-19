@@ -2,24 +2,24 @@ package media
 
 const (
 	getByMessageIDQuery = `
-		SELECT tg_message_id, post_id, file_id, type, url, mime_type, file_name, size_bytes, width, height, duration, created_at, updated_at
+		SELECT tg_message_id, post_id, file_id, type, object_key, mime_type, file_name, size_bytes, width, height, duration, created_at, updated_at
 		FROM %s
 		WHERE tg_message_id = :tg_message_id`
 
 	listByPostIDsQuery = `
-		SELECT tg_message_id, post_id, file_id, type, url, mime_type, file_name, size_bytes, width, height, duration, created_at, updated_at
+		SELECT tg_message_id, post_id, file_id, type, object_key, mime_type, file_name, size_bytes, width, height, duration, created_at, updated_at
 		FROM %s
 		WHERE post_id IN (?)
 		ORDER BY post_id, tg_message_id`
 
 	upsertQuery = `
-		INSERT INTO %s (tg_message_id, post_id, file_id, type, url, mime_type, file_name, size_bytes, width, height, duration, created_at, updated_at)
-		VALUES (:tg_message_id, :post_id, :file_id, :type, :url, :mime_type, :file_name, :size_bytes, :width, :height, :duration, :created_at, NOW())
+		INSERT INTO %s (tg_message_id, post_id, file_id, type, object_key, mime_type, file_name, size_bytes, width, height, duration, created_at, updated_at)
+		VALUES (:tg_message_id, :post_id, :file_id, :type, :object_key, :mime_type, :file_name, :size_bytes, :width, :height, :duration, :created_at, NOW())
 		ON CONFLICT (tg_message_id) DO UPDATE SET
 			post_id = EXCLUDED.post_id,
 			file_id = EXCLUDED.file_id,
 			type = EXCLUDED.type,
-			url = EXCLUDED.url,
+			object_key = EXCLUDED.object_key,
 			mime_type = EXCLUDED.mime_type,
 			file_name = EXCLUDED.file_name,
 			size_bytes = EXCLUDED.size_bytes,

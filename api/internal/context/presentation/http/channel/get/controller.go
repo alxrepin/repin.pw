@@ -14,11 +14,12 @@ type channelService interface {
 type Request struct{}
 
 type Controller struct {
-	channel channelService
+	channel  channelService
+	mediaURL string
 }
 
-func NewController(channel channelService) *Controller {
-	return &Controller{channel: channel}
+func NewController(channel channelService, mediaURL string) *Controller {
+	return &Controller{channel: channel, mediaURL: mediaURL}
 }
 
 func (c *Controller) Handle(ctx context.Context, _ Request) (httpx.APIResponse[Data, any], error) {
@@ -27,5 +28,5 @@ func (c *Controller) Handle(ctx context.Context, _ Request) (httpx.APIResponse[D
 		return httpx.APIResponse[Data, any]{}, err
 	}
 
-	return toResponse(channel), nil
+	return toResponse(channel, c.mediaURL), nil
 }

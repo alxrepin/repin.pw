@@ -76,13 +76,13 @@ func (uc *DownloadMedia) Handle(ctx context.Context, job domain.Job) error {
 		return fmt.Errorf("download media of message %d: %w", payload.MessageID, err)
 	}
 
-	url, err := uc.storage.Upload(ctx, media.ObjectName(), data, media.ContentType())
+	key, err := uc.storage.Upload(ctx, media.ObjectName(), data, media.ContentType())
 	if err != nil {
 		return fmt.Errorf("upload media of message %d: %w", payload.MessageID, err)
 	}
 
 	row := domain.NewPostMedia(payload.PostID, msg)
-	row.URL = url
+	row.ObjectKey = key
 
 	if err := uc.media.Upsert(ctx, row); err != nil {
 		return fmt.Errorf("save media of message %d: %w", payload.MessageID, err)

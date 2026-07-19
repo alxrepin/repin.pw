@@ -11,7 +11,7 @@ type media struct {
 	PostID      int64      `db:"post_id"`
 	FileID      int64      `db:"file_id"`
 	Type        string     `db:"type"`
-	URL         string     `db:"url"`
+	ObjectKey   string     `db:"object_key"`
 	MimeType    *string    `db:"mime_type"`
 	FileName    *string    `db:"file_name"`
 	SizeBytes   *int64     `db:"size_bytes"`
@@ -28,7 +28,7 @@ func (m media) ToDomain() *domain.PostMedia {
 		PostID:      m.PostID,
 		FileID:      m.FileID,
 		Type:        domain.MediaType(m.Type),
-		URL:         m.URL,
+		ObjectKey:   m.ObjectKey,
 		MimeType:    m.MimeType,
 		FileName:    m.FileName,
 		Size:        m.SizeBytes,
@@ -45,7 +45,7 @@ func fromDomain(m *domain.PostMedia) media {
 		PostID:      m.PostID,
 		FileID:      m.FileID,
 		Type:        string(m.Type),
-		URL:         m.URL,
+		ObjectKey:   m.ObjectKey,
 		MimeType:    m.MimeType,
 		FileName:    m.FileName,
 		SizeBytes:   m.Size,

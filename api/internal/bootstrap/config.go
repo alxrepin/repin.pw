@@ -1,6 +1,7 @@
 package bootstrap
 
 import (
+	"strings"
 	"time"
 
 	"repin/internal/pkg/db"
@@ -47,6 +48,13 @@ func (l Logger) Config() logger.Config {
 	return logger.Config{Debug: l.Debug}
 }
 
+type Storage struct {
+	Endpoint  string `env:"MINIO_ENDPOINT"`
+	AccessKey string `env:"MINIO_ACCESS_KEY"`
+	SecretKey string `env:"MINIO_SECRET_KEY"`
+	Bucket    string `env:"MINIO_BUCKET"`
+}
+
 // CLIConfig is everything cmd/cli reads. Migrations touch neither Telegram nor
 // object storage, so demanding those credentials would be a lie.
 type CLIConfig struct {
@@ -55,11 +63,21 @@ type CLIConfig struct {
 	Logger    Logger
 }
 
-// APIConfig is everything cmd/http reads: it only ever queries Postgres.
+// APIConfig is everything cmd/http reads. It needs object storage because media
+// is streamed through /api/v1/media rather than exposed directly.
 type APIConfig struct {
 	HTTP     HTTP
 	Database Database
+	Storage  Storage
 	Logger   Logger
+
+	// Public origin used to build absolute media links. Left empty the API
+	// falls back to root-relative paths.
+	PublicURL *string `env:"PUBLIC_API_URL"`
+}
+
+func (c APIConfig) MediaBaseURL() string {
+	return strings.TrimRight(stringOrEmpty(c.PublicURL), "/")
 }
 
 // Config is the full set, used by the binaries that genuinely need it all:
@@ -105,12 +123,7 @@ type Config struct {
 		Dir *string `env:"FAVICON_DIR"`
 	}
 
-	Storage struct {
-		Endpoint  string `env:"MINIO_ENDPOINT"`
-		AccessKey string `env:"MINIO_ACCESS_KEY"`
-		SecretKey string `env:"MINIO_SECRET_KEY"`
-		Bucket    string `env:"MINIO_BUCKET"`
-	}
+	Storage Storage
 
 	Logger Logger
 }

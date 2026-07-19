@@ -6,6 +6,7 @@ import (
 	"repin/internal/context/application/service"
 	"repin/internal/context/domain"
 	"repin/internal/context/infrastructure/text"
+	"repin/internal/context/presentation/http/media"
 	"repin/internal/pkg/httpx"
 )
 
@@ -55,11 +56,11 @@ type Media struct {
 	Duration *float64 `json:"duration,omitempty"`
 }
 
-func toMedia(m domain.PostMedia) Media {
+func toMedia(m domain.PostMedia, mediaURL string) Media {
 	return Media{
 		ID:       m.TgMessageID,
 		Type:     string(m.Type),
-		URL:      m.URL,
+		URL:      media.URL(mediaURL, m.ObjectKey),
 		MimeType: m.MimeType,
 		FileName: m.FileName,
 		Size:     m.Size,
@@ -69,7 +70,7 @@ func toMedia(m domain.PostMedia) Media {
 	}
 }
 
-func toResponse(details service.PostDetails) httpx.APIResponse[Data, any] {
+func toResponse(details service.PostDetails, mediaURL string) httpx.APIResponse[Data, any] {
 	post := details.Post
 
 	data := Data{
@@ -83,19 +84,19 @@ func toResponse(details service.PostDetails) httpx.APIResponse[Data, any] {
 		SEODescription: post.SEODescription,
 		SEOKeywords:    post.SEOKeywords,
 		Media:          make([]Media, 0, len(post.Media)),
-		Prev:           toAdjacent(details.Prev),
-		Next:           toAdjacent(details.Next),
+		Prev:           toAdjacent(details.Prev, mediaURL),
+		Next:           toAdjacent(details.Next, mediaURL),
 		CreatedAt:      post.CreatedAt.Format(time.RFC3339),
 	}
 
 	for _, m := range post.Media {
-		data.Media = append(data.Media, toMedia(m))
+		data.Media = append(data.Media, toMedia(m, mediaURL))
 	}
 
 	return httpx.NewAPIResponse[Data, any](&data, nil, nil, nil)
 }
 
-func toAdjacent(post *domain.Post) *Adjacent {
+func toAdjacent(post *domain.Post, mediaURL string) *Adjacent {
 	if post == nil {
 		return nil
 	}
@@ -115,7 +116,7 @@ func toAdjacent(post *domain.Post) *Adjacent {
 
 	for _, m := range post.Media {
 		if m.Type == domain.MediaTypePhoto {
-			adj.Cover = &Cover{URL: m.URL, Width: m.Width, Height: m.Height}
+			adj.Cover = &Cover{URL: media.URL(mediaURL, m.ObjectKey), Width: m.Width, Height: m.Height}
 			break
 		}
 	}

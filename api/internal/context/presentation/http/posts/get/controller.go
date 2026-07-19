@@ -16,11 +16,12 @@ type Request struct {
 }
 
 type Controller struct {
-	posts postService
+	posts    postService
+	mediaURL string
 }
 
-func NewController(posts postService) *Controller {
-	return &Controller{posts: posts}
+func NewController(posts postService, mediaURL string) *Controller {
+	return &Controller{posts: posts, mediaURL: mediaURL}
 }
 
 func (c *Controller) Handle(ctx context.Context, req Request) (httpx.APIResponse[Data, any], error) {
@@ -29,5 +30,5 @@ func (c *Controller) Handle(ctx context.Context, req Request) (httpx.APIResponse
 		return httpx.APIResponse[Data, any]{}, err
 	}
 
-	return toResponse(details), nil
+	return toResponse(details, c.mediaURL), nil
 }

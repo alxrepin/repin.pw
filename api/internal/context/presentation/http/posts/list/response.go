@@ -6,6 +6,7 @@ import (
 	"repin/internal/context/application/service"
 	"repin/internal/context/domain"
 	"repin/internal/context/infrastructure/text"
+	"repin/internal/context/presentation/http/media"
 	"repin/internal/pkg/httpx"
 )
 
@@ -27,10 +28,10 @@ type Cover struct {
 	Height *int   `json:"height,omitempty"`
 }
 
-func toResponse(page service.PostPage) httpx.APIResponse[any, Item] {
+func toResponse(page service.PostPage, mediaURL string) httpx.APIResponse[any, Item] {
 	items := make([]Item, len(page.Posts))
 	for i, post := range page.Posts {
-		items[i] = toItem(post)
+		items[i] = toItem(post, mediaURL)
 	}
 
 	paginate := &httpx.Paginate{Page: page.Page, Limit: page.Limit, Total: page.Total}
@@ -38,7 +39,7 @@ func toResponse(page service.PostPage) httpx.APIResponse[any, Item] {
 	return httpx.NewAPIResponse[any](nil, items, paginate, nil)
 }
 
-func toItem(post domain.Post) Item {
+func toItem(post domain.Post, mediaURL string) Item {
 	item := Item{
 		ID:        post.ID,
 		GroupID:   post.GroupID,
@@ -54,7 +55,7 @@ func toItem(post domain.Post) Item {
 
 	for _, m := range post.Media {
 		if m.Type == domain.MediaTypePhoto {
-			item.Cover = &Cover{URL: m.URL, Width: m.Width, Height: m.Height}
+			item.Cover = &Cover{URL: media.URL(mediaURL, m.ObjectKey), Width: m.Width, Height: m.Height}
 			break
 		}
 	}
