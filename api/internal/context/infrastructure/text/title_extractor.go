@@ -1,6 +1,7 @@
 package text
 
 import (
+	"html"
 	"regexp"
 	"strings"
 )
@@ -24,7 +25,13 @@ func (e *TitleExtractor) Extract(text string) (string, string) {
 		return "", text
 	}
 
+	// The h1 body is HTML, but the title is stored and rendered as plain text,
+	// so entities have to be decoded — otherwise a ">" typed in Telegram reaches
+	// the page as "&gt;". Decoding after the tags are stripped, never before:
+	// the other order would let an escaped "<b>" turn into a tag and vanish.
 	title := strings.TrimSpace(reTag.ReplaceAllString(strings.TrimSpace(match[1]), ""))
+	title = html.UnescapeString(title)
+
 	remaining := strings.TrimSpace(reH1.ReplaceAllString(text, ""))
 
 	return title, remaining

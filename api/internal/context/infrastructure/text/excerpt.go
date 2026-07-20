@@ -1,6 +1,7 @@
 package text
 
 import (
+	"html"
 	"regexp"
 	"strings"
 )
@@ -11,11 +12,14 @@ var (
 )
 
 // Excerpt turns rendered post HTML into a plain-text snippet of at most n
-// runes: tags become spaces (so adjacent blocks don't glue together), then
-// whitespace is collapsed. Truncating the HTML directly would risk cutting
-// through a tag.
-func Excerpt(html string, n int) string {
-	s := reAnyTag.ReplaceAllString(html, " ")
+// runes: tags become spaces (so adjacent blocks don't glue together), entities
+// are decoded back to the characters they stand for, then whitespace is
+// collapsed. Truncating the HTML directly would risk cutting through a tag, and
+// decoding before truncating keeps the count over real characters — otherwise
+// the cut could land inside "&gt;".
+func Excerpt(markup string, n int) string {
+	s := reAnyTag.ReplaceAllString(markup, " ")
+	s = html.UnescapeString(s)
 	s = strings.TrimSpace(reSpace.ReplaceAllString(s, " "))
 
 	runes := []rune(s)

@@ -7,18 +7,10 @@ import (
 	"strings"
 
 	"repin/internal/context/domain"
+	"repin/prompts"
 )
 
 const maxInputRunes = 6000
-
-const seoSystemPrompt = `Ты SEO-редактор блога. По тексту поста ты составляешь метаданные для поисковой выдачи.
-
-Правила:
-- Пиши на том же языке, что и пост.
-- seo_title: до 60 символов, отражает суть поста, без кликбейта и без названия сайта.
-- seo_description: 120-160 символов, законченное предложение, передаёт пользу поста для читателя.
-- seo_keywords: 5-8 ключевых фраз в нижнем регистре, по убыванию релевантности, без повторов и без решёток.
-- Опирайся только на текст поста, ничего не выдумывай.`
 
 const (
 	jsType = "type"
@@ -70,7 +62,7 @@ func (g *SEOGenerator) Generate(ctx context.Context, post *domain.Post) (*domain
 	}
 
 	messages := []Message{
-		{Role: "system", Content: seoSystemPrompt},
+		{Role: "system", Content: prompts.SEOSystem},
 		{Role: "user", Content: source},
 	}
 
