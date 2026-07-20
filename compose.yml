@@ -95,7 +95,6 @@ services:
       context: "./api"
       dockerfile: "../.docker/container/api/Dockerfile"
     command: ["./bin/bot"]
-    profiles: ["bot"]
     restart: unless-stopped
     env_file: ".env"
     environment:
