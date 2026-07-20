@@ -63,6 +63,8 @@ services:
     environment:
       DATABASE_URL: "${DATABASE_URL}"
       MEDIA_BASE_URL: "${MEDIA_BASE_URL:-}"
+      PUBLIC_SITE_URL: "${PUBLIC_SITE_URL:-}"
+      FEEDS_REFRESH_INTERVAL: "${FEEDS_REFRESH_INTERVAL:-5m}"
     ports:
       - "127.0.0.1:8080:8080"
     depends_on:

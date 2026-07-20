@@ -59,7 +59,8 @@ let vite: any;
 
 if (isProd) {
   app.use(compression());
-  app.use(sirv('./dist/client', { extensions: [] }));
+  app.use('/assets', sirv('./dist/client/assets', { maxAge: 31536000, immutable: true }));
+  app.use(sirv('./dist/client', { extensions: [], maxAge: 3600 }));
 } else {
   const { createServer } = await import('vite');
   vite = await createServer({
@@ -68,6 +69,38 @@ if (isProd) {
   });
   app.use(vite.middlewares);
 }
+
+for (const path of ['/sitemap.xml', '/rss.xml', '/llms.txt', '/llms-full.txt']) {
+  app.get(path, async (_req, res) => {
+    try {
+      const upstream = await fetch(`${globalThis.__API_BASE__}${path}`);
+      const contentType = upstream.headers.get('content-type');
+
+      res.status(upstream.status);
+      if (contentType) res.set('Content-Type', contentType);
+      res.set('Cache-Control', 'public, max-age=300');
+      res.send(Buffer.from(await upstream.arrayBuffer()));
+    } catch (error) {
+      console.error(`proxy ${path} failed:`, error);
+      res.status(502).end('Bad Gateway');
+    }
+  });
+}
+
+app.get('/favicon.ico', (_req, res) => {
+  res.redirect(301, '/favicon/favicon.jpg');
+});
+
+app.get('/robots.txt', (_req, res) => {
+  const lines = ['User-Agent: *', 'Disallow:'];
+
+  if (globalThis.__SITE_URL__) {
+    lines.push('', `Sitemap: ${globalThis.__SITE_URL__}/sitemap.xml`);
+  }
+
+  res.set('Cache-Control', 'public, max-age=3600');
+  res.type('text/plain').send(`${lines.join('\n')}\n`);
+});
 
 app.use(async (req, res) => {
   try {

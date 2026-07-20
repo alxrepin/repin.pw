@@ -38,6 +38,7 @@ interface PostData extends ListItem {
   seo_title?: string;
   seo_description?: string;
   seo_keywords?: string;
+  updated_at?: string;
 }
 
 function stripTags(html: string): string {
@@ -99,6 +100,7 @@ function toPost(data: PostData): Post {
     seoDescription: data.seo_description,
     seoKeywords: data.seo_keywords,
     createdAt: data.created_at,
+    updatedAt: data.updated_at,
   };
 }
 

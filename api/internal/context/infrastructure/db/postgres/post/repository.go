@@ -62,12 +62,20 @@ func (r *Repository) List(ctx context.Context, page, limit int) ([]domain.Post, 
 	return posts, total, rows.Err()
 }
 
-func (r *Repository) All(ctx context.Context) ([]domain.Post, error) {
+func (r *Repository) ListAfter(ctx context.Context, afterID int64, limit int) ([]domain.Post, error) {
 	ext := db.Executor(ctx, r.db.Connection())
 
-	rows, err := ext.QueryxContext(ctx, fmt.Sprintf(allQuery, r.table))
+	query, args, err := sqlx.Named(fmt.Sprintf(listAfterQuery, r.table), map[string]any{
+		"after": afterID,
+		"limit": limit,
+	})
 	if err != nil {
-		return nil, fmt.Errorf("query all posts: %w", err)
+		return nil, fmt.Errorf("bind list posts after: %w", err)
+	}
+
+	rows, err := ext.QueryxContext(ctx, ext.Rebind(query), args...)
+	if err != nil {
+		return nil, fmt.Errorf("query posts after: %w", err)
 	}
 	defer rows.Close()
 

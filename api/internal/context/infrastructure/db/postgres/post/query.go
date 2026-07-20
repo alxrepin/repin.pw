@@ -9,10 +9,12 @@ const (
 		ORDER BY created_at DESC
 		LIMIT :limit OFFSET :offset`
 
-	allQuery = `
+	listAfterQuery = `
 		SELECT id, group_id, title, url, text, raw_text, entities, invert_media, seo_title, seo_description, seo_keywords, created_at, updated_at
 		FROM %s
-		ORDER BY id`
+		WHERE id > :after
+		ORDER BY id
+		LIMIT :limit`
 
 	getByIDQuery = `
 		SELECT id, group_id, title, url, text, raw_text, entities, invert_media, seo_title, seo_description, seo_keywords, created_at, updated_at

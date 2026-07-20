@@ -14,6 +14,8 @@ type App struct {
 func New(ctx context.Context) *App {
 	r := newRegistry(ctx)
 
+	go r.controllers.feeds.Run(r.log.WithContext(ctx), r.cfg.FeedsRefresh)
+
 	return &App{
 		registry: r,
 		server:   httpx.New(r.router, r.cfg.HTTP.Config()),

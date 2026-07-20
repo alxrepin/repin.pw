@@ -64,10 +64,18 @@ type APIConfig struct {
 	Logger   Logger
 
 	MediaURL *string `env:"MEDIA_BASE_URL"`
+	SiteURL  *string `env:"PUBLIC_SITE_URL"`
+
+	// FeedsRefresh is how often sitemap/RSS/llms snapshots are re-rendered.
+	FeedsRefresh time.Duration `env:"FEEDS_REFRESH_INTERVAL" envDefault:"5m"`
 }
 
 func (c APIConfig) MediaBaseURL() string {
 	return strings.TrimRight(stringOrEmpty(c.MediaURL), "/")
+}
+
+func (c APIConfig) PublicSiteURL() string {
+	return strings.TrimRight(stringOrEmpty(c.SiteURL), "/")
 }
 
 type Config struct {

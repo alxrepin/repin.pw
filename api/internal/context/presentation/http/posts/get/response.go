@@ -26,6 +26,7 @@ type Data struct {
 	Prev           *Adjacent `json:"prev,omitempty"`
 	Next           *Adjacent `json:"next,omitempty"`
 	CreatedAt      string    `json:"created_at"`
+	UpdatedAt      *string   `json:"updated_at,omitempty"`
 }
 
 type Adjacent struct {
@@ -87,6 +88,10 @@ func toResponse(details service.PostDetails, mediaURL string) httpx.APIResponse[
 		Prev:           toAdjacent(details.Prev, mediaURL),
 		Next:           toAdjacent(details.Next, mediaURL),
 		CreatedAt:      post.CreatedAt.Format(time.RFC3339),
+	}
+
+	if post.UpdatedAt != nil {
+		data.UpdatedAt = new(post.UpdatedAt.Format(time.RFC3339))
 	}
 
 	for _, m := range post.Media {

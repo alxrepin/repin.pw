@@ -17,6 +17,7 @@ const (
 
 type postLister interface {
 	List(ctx context.Context, page, limit int) ([]domain.Post, int, error)
+	ListAfter(ctx context.Context, afterID int64, limit int) ([]domain.Post, error)
 	GetByID(ctx context.Context, id int64) (*domain.Post, error)
 	GetByURL(ctx context.Context, url string) (*domain.Post, error)
 	Prev(ctx context.Context, id int64) (*domain.Post, error)
@@ -65,6 +66,28 @@ func (s *PostService) List(ctx context.Context, page, limit int) (PostPage, erro
 	}
 
 	return PostPage{Posts: posts, Page: page, Limit: limit, Total: total}, nil
+}
+
+func (s *PostService) Latest(ctx context.Context, n int) ([]domain.Post, error) {
+	posts, _, err := s.posts.List(ctx, 1, n)
+	if err != nil {
+		return nil, fmt.Errorf("latest posts: %w", err)
+	}
+
+	if err := s.attachMedia(ctx, posts); err != nil {
+		return nil, err
+	}
+
+	return posts, nil
+}
+
+func (s *PostService) ListAfter(ctx context.Context, afterID int64, limit int) ([]domain.Post, error) {
+	posts, err := s.posts.ListAfter(ctx, afterID, limit)
+	if err != nil {
+		return nil, fmt.Errorf("list posts after: %w", err)
+	}
+
+	return posts, nil
 }
 
 type PostDetails struct {

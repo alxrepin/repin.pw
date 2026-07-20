@@ -10,6 +10,7 @@ import PostsPagination from '@/modules/posts/components/PostsPagination.vue';
 import type { PostList } from '@/modules/posts/types';
 import { useDataLoader, useHttpStatus } from '@/shared/composables/useAsyncData';
 import { siteUrl } from '@/shared/config/env';
+import { channelDescription, jsonLd } from '@/shared/config/seo';
 import { UiButton, UiContainer } from '@/shared/ui';
 
 const POSTS_PER_PAGE = 6;
@@ -46,18 +47,33 @@ watchEffect(() => {
 });
 
 const subscribers = channel.subscriptions.toLocaleString('ru-RU');
-const description = channel.description ?? '';
+const description = channelDescription(channel);
 
 const title = computed(() =>
   page.value > 1 ? `${channel.title} — страница ${page.value}` : channel.title,
 );
-const canonicalLink = computed(() => {
-  const origin = siteUrl();
-  if (!origin) return [];
 
-  const href = page.value > 1 ? `${origin}/?page=${page.value}` : `${origin}/`;
+const origin = siteUrl();
 
-  return [{ rel: 'canonical', href }];
+const canonicalUrl = computed(() => {
+  if (!origin) return '';
+
+  return page.value > 1 ? `${origin}/?page=${page.value}` : `${origin}/`;
+});
+
+const canonicalLink = computed(() =>
+  canonicalUrl.value ? [{ rel: 'canonical', href: canonicalUrl.value }] : [],
+);
+
+const schema = jsonLd({
+  '@context': 'https://schema.org',
+  '@type': 'Blog',
+  name: channel.title,
+  description,
+  url: origin ? `${origin}/` : undefined,
+  inLanguage: 'ru',
+  author: { '@type': 'Person', name: channel.title, url: channel.url },
+  sameAs: [channel.url],
 });
 
 useHead({
@@ -65,12 +81,16 @@ useHead({
   meta: [
     { name: 'description', content: description },
     { property: 'og:type', content: 'website' },
+    { property: 'og:site_name', content: channel.title },
+    { property: 'og:locale', content: 'ru_RU' },
     { property: 'og:title', content: title },
     { property: 'og:description', content: description },
+    { property: 'og:url', content: canonicalUrl },
     { property: 'og:image', content: channel.avatar ?? '' },
     { name: 'twitter:card', content: 'summary_large_image' },
   ],
   link: canonicalLink,
+  script: [{ type: 'application/ld+json', innerHTML: schema }],
 });
 </script>
 

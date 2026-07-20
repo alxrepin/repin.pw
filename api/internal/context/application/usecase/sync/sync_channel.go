@@ -15,7 +15,10 @@ import (
 	"repin/internal/context/infrastructure/text"
 )
 
-const albumOverlap = 10
+const (
+	albumOverlap = 10
+	maxSlugLen   = 80
+)
 
 type rawMessages interface {
 	WithSession(ctx context.Context, fn func(ctx context.Context) error) error
@@ -322,7 +325,7 @@ func (uc *SyncChannel) buildPost(postID int64, group []domain.RawMessage, channe
 
 	url := strconv.FormatInt(postID, 10)
 	if post.Title != nil {
-		if slug := text.Slug(*post.Title); slug != "" {
+		if slug := text.TruncateSlug(text.Slug(*post.Title), maxSlugLen); slug != "" {
 			url += "-" + slug
 		}
 	}

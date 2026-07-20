@@ -4,6 +4,7 @@ import { RouterLink, useRoute } from 'vue-router';
 import { useChannel } from '@/modules/channel/composables/useChannel';
 import { useAsyncData, useHttpStatus } from '@/shared/composables/useAsyncData';
 import { siteUrl } from '@/shared/config/env';
+import { jsonLd } from '@/shared/config/seo';
 import { formatPostDate } from '@/shared/lib/date';
 import { ErrorState, UiContainer } from '@/shared/ui';
 import { fetchPostRequest } from '../api/posts';
@@ -26,28 +27,57 @@ const canonicalSlug = post?.url ?? slug;
 
 const publishedAt = post ? formatPostDate(post.createdAt) : '';
 
+const pageTitle = post?.seoTitle ?? post?.title ?? '';
+
 const description = post?.seoDescription ?? post?.text.replace(/<[^>]*>/g, '').slice(0, 160) ?? '';
 
-const ogImage = post?.media.find(m => m.type === 'photo')?.url ?? channel.avatar ?? '';
+const cover = post?.media.find(m => m.type === 'photo');
+const ogImage = cover?.url ?? channel.avatar ?? '';
 
 const origin = siteUrl();
-const canonicalLink = origin
-  ? [{ rel: 'canonical', href: `${origin}/posts/${canonicalSlug}` }]
-  : [];
+const canonicalUrl = origin ? `${origin}/posts/${canonicalSlug}` : '';
+const canonicalLink = canonicalUrl ? [{ rel: 'canonical', href: canonicalUrl }] : [];
+
+const schema = post
+  ? jsonLd({
+      '@context': 'https://schema.org',
+      '@type': 'BlogPosting',
+      headline: pageTitle,
+      description,
+      url: canonicalUrl || undefined,
+      mainEntityOfPage: canonicalUrl || undefined,
+      image: ogImage || undefined,
+      datePublished: post.createdAt,
+      dateModified: post.updatedAt ?? post.createdAt,
+      inLanguage: 'ru',
+      keywords: post.seoKeywords,
+      author: { '@type': 'Person', name: channel.title, url: channel.url },
+      publisher: { '@type': 'Person', name: channel.title, url: origin || channel.url },
+    })
+  : '';
 
 useHead(
   post
     ? {
-        title: `${post.title} — ${channel.title}`,
+        title: `${pageTitle} — ${channel.title}`,
         meta: [
           { name: 'description', content: description },
+          { name: 'keywords', content: post.seoKeywords ?? '' },
           { property: 'og:type', content: 'article' },
-          { property: 'og:title', content: post.title },
+          { property: 'og:site_name', content: channel.title },
+          { property: 'og:locale', content: 'ru_RU' },
+          { property: 'og:title', content: pageTitle },
           { property: 'og:description', content: description },
+          { property: 'og:url', content: canonicalUrl },
           { property: 'og:image', content: ogImage },
+          { property: 'og:image:width', content: cover?.width ? String(cover.width) : '' },
+          { property: 'og:image:height', content: cover?.height ? String(cover.height) : '' },
+          { property: 'article:published_time', content: post.createdAt },
+          { property: 'article:modified_time', content: post.updatedAt ?? post.createdAt },
           { name: 'twitter:card', content: 'summary_large_image' },
         ],
         link: canonicalLink,
+        script: [{ type: 'application/ld+json', innerHTML: schema }],
       }
     : { title: `Пост не найден — ${channel.title}` },
 );
@@ -64,7 +94,7 @@ useHead(
           <span class="i-mdi-arrow-left" />
           Назад
         </RouterLink>
-        <time>{{ publishedAt }}</time>
+        <time :datetime="post.createdAt">{{ publishedAt }}</time>
       </div>
 
       <PostContent

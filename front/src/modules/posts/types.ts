@@ -50,6 +50,7 @@ export interface Post {
   seoDescription?: string;
   seoKeywords?: string;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface PostList {

@@ -88,12 +88,12 @@ onMounted(() => {
     >
       {{ shownTitle }}
     </h1>
-    <PostMediaBlock v-if="media?.length && !invertMedia" :media="media" class="mb-8" />
+    <PostMediaBlock v-if="media?.length && !invertMedia" :media="media" :alt="title" class="mb-8" />
     <div class="post-body prose max-w-none" @click="onBodyClick">
       <p v-if="overflow">{{ overflow }}</p>
       <div v-html="html" />
     </div>
-    <PostMediaBlock v-if="media?.length && invertMedia" :media="media" class="mt-8" />
+    <PostMediaBlock v-if="media?.length && invertMedia" :media="media" :alt="title" class="mt-8" />
   </article>
 </template>
 

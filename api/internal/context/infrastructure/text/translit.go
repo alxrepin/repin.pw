@@ -27,6 +27,21 @@ func Slug(text string) string {
 	return s
 }
 
+// TruncateSlug cuts a slug down to maxLen bytes at a word boundary. Slugs are
+// ASCII, so byte length equals character length.
+func TruncateSlug(slug string, maxLen int) string {
+	if len(slug) <= maxLen {
+		return slug
+	}
+
+	cut := slug[:maxLen]
+	if i := strings.LastIndex(cut, "-"); i > 0 {
+		cut = cut[:i]
+	}
+
+	return strings.Trim(cut, "-")
+}
+
 func utf16ToByteOffset(text string, utf16Pos int) int {
 	var bytePos, current int
 

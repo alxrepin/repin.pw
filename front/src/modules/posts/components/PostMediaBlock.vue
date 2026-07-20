@@ -3,7 +3,7 @@ import { computed, onMounted, ref } from 'vue';
 import type { PostMedia } from '../types';
 import MediaLightbox from './MediaLightbox.vue';
 
-const props = defineProps<{ media: PostMedia[] }>();
+const props = defineProps<{ media: PostMedia[]; alt?: string }>();
 
 const mounted = ref(false);
 onMounted(() => {
@@ -31,6 +31,12 @@ const fitClass = computed(() => (isGrid.value ? 'h-full w-full object-cover' : '
 const viewable = computed(() =>
   gallery.value.filter(m => m.type === 'photo' || m.type === 'video'),
 );
+
+function imageAlt(index: number): string {
+  if (!props.alt) return '';
+
+  return gallery.value.length > 1 ? `${props.alt} — фото ${index + 1}` : props.alt;
+}
 const lightboxIndex = ref<number | null>(null);
 
 function openLightbox(item: PostMedia): void {
@@ -102,7 +108,7 @@ function formatSize(bytes?: number): string {
             :src="item.url"
             :width="item.width"
             :height="item.height"
-            alt=""
+            :alt="imageAlt(index)"
             class="ui-zoom rounded-3xl"
             :class="fitClass"
           />

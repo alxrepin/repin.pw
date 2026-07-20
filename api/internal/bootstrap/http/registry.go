@@ -11,6 +11,7 @@ import (
 	"repin/internal/context/infrastructure/db/postgres/media"
 	"repin/internal/context/infrastructure/db/postgres/post"
 	channelget "repin/internal/context/presentation/http/channel/get"
+	"repin/internal/context/presentation/http/feeds"
 	postsget "repin/internal/context/presentation/http/posts/get"
 	postslist "repin/internal/context/presentation/http/posts/list"
 	"repin/internal/pkg/config"
@@ -38,6 +39,7 @@ type registry struct {
 		posts   *postslist.Controller
 		post    *postsget.Controller
 		channel *channelget.Controller
+		feeds   *feeds.Controller
 	}
 	middleware struct {
 		log  *httpx.Log
@@ -73,13 +75,14 @@ func (r *registry) load(ctx context.Context) error {
 	r.controllers.posts = postslist.NewController(r.services.post, base)
 	r.controllers.post = postsget.NewController(r.services.post, base)
 	r.controllers.channel = channelget.NewController(r.services.channel, base)
+	r.controllers.feeds = feeds.NewController(r.services.post, r.services.channel, r.cfg.PublicSiteURL(), base)
 
 	r.middleware.log = httpx.NewLog(r.log)
 	r.middleware.cors = httpx.NewCORS()
 
 	r.router = newRouter(
 		r.middleware.log, r.middleware.cors,
-		r.controllers.posts, r.controllers.post, r.controllers.channel,
+		r.controllers.posts, r.controllers.post, r.controllers.channel, r.controllers.feeds,
 	)
 
 	return validator.ValidateStructDependencies(r)
