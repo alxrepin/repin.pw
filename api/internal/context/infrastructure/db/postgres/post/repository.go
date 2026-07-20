@@ -110,7 +110,6 @@ func (r *Repository) GetByID(ctx context.Context, id int64) (*domain.Post, error
 	return row.ToDomain()
 }
 
-// UpdateSEO writes only the search-metadata columns of a post.
 func (r *Repository) UpdateSEO(ctx context.Context, id int64, seo domain.PostSEO) error {
 	ext := db.Executor(ctx, r.db.Connection())
 

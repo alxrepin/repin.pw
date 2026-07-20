@@ -49,8 +49,7 @@ func toItem(post domain.Post, mediaURL string) Item {
 	}
 
 	if post.Text != nil {
-		excerpt := text.Excerpt(*post.Text, excerptRunes)
-		item.Text = &excerpt
+		item.Text = new(text.Excerpt(*post.Text, excerptRunes))
 	}
 
 	for _, m := range post.Media {

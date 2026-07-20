@@ -12,7 +12,6 @@ type job struct {
 	Kind        string    `db:"kind"`
 	DedupKey    string    `db:"dedup_key"`
 	Payload     []byte    `db:"payload"`
-	Status      string    `db:"status"`
 	Attempts    int       `db:"attempts"`
 	MaxAttempts int       `db:"max_attempts"`
 	RunAt       time.Time `db:"run_at"`
@@ -26,7 +25,6 @@ func (j job) ToDomain() *domain.Job {
 		Kind:        domain.JobKind(j.Kind),
 		DedupKey:    j.DedupKey,
 		Payload:     json.RawMessage(j.Payload),
-		Status:      domain.JobStatus(j.Status),
 		Attempts:    j.Attempts,
 		MaxAttempts: j.MaxAttempts,
 		RunAt:       j.RunAt,

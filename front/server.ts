@@ -15,13 +15,39 @@ const port = Number(process.env.PORT ?? 3000);
 
 globalThis.__API_BASE__ = process.env.API_INTERNAL_URL ?? 'http://localhost:8080';
 
-// Public origin for canonical links. Normalised once here so neither the pages
-// nor the deployer have to care about a trailing slash in the env value.
 globalThis.__SITE_URL__ = (process.env.PUBLIC_SITE_URL ?? '').trim().replace(/\/+$/, '');
 
-// Same escaping as the SSR state: keeps a "</script>" inside a value from
-// closing the inline script tag.
-const publicConfig = JSON.stringify({ siteUrl: globalThis.__SITE_URL__ }).replace(/</g, '\\u003C');
+const metrikaId = readMetrikaId();
+
+function readMetrikaId(): string {
+  const raw = (process.env.YANDEX_METRIKA_ID ?? '').trim();
+  if (!raw) return '';
+
+  if (!/^\d+$/.test(raw)) {
+    console.warn(`YANDEX_METRIKA_ID must be digits only, got ${JSON.stringify(raw)} — counter off`);
+    return '';
+  }
+
+  return raw;
+}
+
+const metrikaTag = metrikaId
+  ? `<script>
+(function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+m[i].l=1*new Date();k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r;
+a.parentNode.insertBefore(k,a)})(window,document,"script","https://mc.yandex.ru/metrika/tag.js","ym");
+ym(${metrikaId},"init",{clickmap:true,trackLinks:true,accurateTrackBounce:true,webvisor:true});
+</script>`
+  : '';
+
+const metrikaNoscript = metrikaId
+  ? `<noscript><div><img src="https://mc.yandex.ru/watch/${metrikaId}" style="position:absolute;left:-9999px" alt="" /></div></noscript>`
+  : '';
+
+const publicConfig = JSON.stringify({
+  siteUrl: globalThis.__SITE_URL__,
+  metrikaId,
+}).replace(/</g, '\\u003C');
 
 type Render = (url: string) => Promise<RenderResult>;
 
@@ -62,6 +88,8 @@ app.use(async (req, res) => {
     const rendered = await render(url);
 
     const html = template
+      .replace('<!--app-analytics-->', metrikaTag)
+      .replace('<!--app-analytics-noscript-->', metrikaNoscript)
       .replace('<!--app-head-->', rendered.headTags)
       .replace('<!--app-html-->', rendered.html)
       .replace(

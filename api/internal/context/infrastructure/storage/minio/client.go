@@ -26,9 +26,6 @@ func NewClient(endpoint, accessKey, secretKey, bucket string) (*Client, error) {
 	return &Client{client: client, bucket: bucket}, nil
 }
 
-// Upload returns the object key rather than a URL: the bucket and endpoint are
-// deployment details, and baking them into stored rows outlives any redeploy.
-// The public link is built from MEDIA_BASE_URL when the row is served.
 func (c *Client) Upload(ctx context.Context, objectName string, data []byte, contentType string) (string, error) {
 	_, err := c.client.PutObject(ctx, c.bucket, objectName, bytes.NewReader(data), int64(len(data)),
 		minio.PutObjectOptions{ContentType: contentType})

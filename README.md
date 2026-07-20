@@ -205,7 +205,7 @@ bun run dev                   # SSR-сервер с HMR на :3000
 Три файла `.env.example`, каждый копируется в `.env` рядом:
 
 - **корень** — для `compose.yml` (Postgres, MinIO, Telegram, OpenRouter, прокси,
-  публичный URL API).
+  публичный URL API, счётчик Яндекс.Метрики).
 - **`api/.env.example`** — для локального запуска сервиса без Docker.
 - **`front/.env.example`** — для локального запуска SSR-сервера.
 

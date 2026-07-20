@@ -26,8 +26,6 @@ type RawMessageRepository struct {
 	faviconDir string
 }
 
-// faviconDir is optional: when set, the channel avatar is also written to
-// <faviconDir>/favicon.jpg, which the front serves as the site favicon.
 func NewRawMessageRepository(client *Client, storage Storage, faviconDir string) *RawMessageRepository {
 	return &RawMessageRepository{client: client, factory: NewRawMessageFactory(), storage: storage, faviconDir: faviconDir}
 }
@@ -83,8 +81,6 @@ func (r *RawMessageRepository) GetByID(ctx context.Context, username string, id 
 	return message, err
 }
 
-// GetByIDs fetches specific messages by their IDs. Missing (deleted) IDs are
-// silently skipped.
 func (r *RawMessageRepository) GetByIDs(ctx context.Context, username string, ids []int) ([]domain.RawMessage, error) {
 	var messages []domain.RawMessage
 
@@ -218,7 +214,6 @@ func (r *RawMessageRepository) writeFavicon(data []byte) error {
 		return fmt.Errorf("create favicon dir: %w", err)
 	}
 
-	// Write-then-rename so the front never serves a half-written file.
 	target := filepath.Join(r.faviconDir, "favicon.jpg")
 	tmp := target + ".tmp"
 

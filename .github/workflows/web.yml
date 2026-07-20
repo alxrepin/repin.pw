@@ -35,6 +35,4 @@ jobs:
       - name: build
         run: bun run build
         env:
-          # Baked into the client bundle; any value validates the build in CI.
-          # The real origin comes from PUBLIC_API_URL at deploy time.
           VITE_API_BASE_URL: http://api.example.com

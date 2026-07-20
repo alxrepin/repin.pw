@@ -53,7 +53,7 @@ function formatSize(bytes?: number): string {
           v-if="item.type === 'video'"
           type="button"
           aria-label="Смотреть видео"
-          class="group relative block overflow-hidden rounded-3xl bg-black"
+          class="group relative isolate block overflow-hidden rounded-3xl bg-black"
           :class="wrapClass(index)"
           @click="openLightbox(item)"
         >
@@ -67,8 +67,9 @@ function formatSize(bytes?: number): string {
           />
           <span class="pointer-events-none absolute inset-0 grid place-items-center">
             <span
-              class="i-mdi-play flex h-14 w-14 items-center justify-center rounded-full bg-black/50 text-3xl text-white transition group-hover:bg-black/70"
+              class="col-start-1 row-start-1 h-14 w-14 rounded-full bg-white mix-blend-difference transition-transform group-hover:scale-110"
             />
+            <span class="i-mdi-play col-start-1 row-start-1 text-3xl text-white mix-blend-difference" />
           </span>
         </button>
 

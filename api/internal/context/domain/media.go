@@ -10,16 +10,14 @@ type PostMedia struct {
 	PostID      int64
 	FileID      int64
 	Type        MediaType
-	// ObjectKey is the key inside the storage bucket, e.g. "media/123.jpg".
-	// Never a URL: the endpoint and bucket are deployment details.
-	ObjectKey string
-	MimeType  *string
-	FileName  *string
-	Size      *int64
-	Width     *int
-	Height    *int
-	Duration  *float64 // seconds
-	CreatedAt time.Time
+	ObjectKey   string
+	MimeType    *string
+	FileName    *string
+	Size        *int64
+	Width       *int
+	Height      *int
+	Duration    *float64 // seconds
+	CreatedAt   time.Time
 }
 
 func NewPostMedia(postID int64, msg RawMessage) *PostMedia {

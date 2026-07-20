@@ -13,20 +13,15 @@ const (
 	JobKindGenerateSEO   JobKind = "post.seo"
 )
 
-type JobStatus string
-
-const (
-	JobStatusPending JobStatus = "pending"
-	JobStatusRunning JobStatus = "running"
-	JobStatusFailed  JobStatus = "failed"
-)
-
+// Job is always a claimed one: Claim is the only thing that builds it, and the
+// same statement flips the row to "running". The queue's states live in SQL —
+// the partial indexes on jobs are defined in terms of them and every transition
+// is an atomic UPDATE — so nothing here mirrors them.
 type Job struct {
 	ID          int64
 	Kind        JobKind
 	DedupKey    string
 	Payload     json.RawMessage
-	Status      JobStatus
 	Attempts    int
 	MaxAttempts int
 	RunAt       time.Time

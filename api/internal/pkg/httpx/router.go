@@ -59,7 +59,7 @@ func HandleRoute[Request, Data, Item any](r *Router, path string, h handler[Requ
 
 func wrap[Request, Data, Item any](r *Router, h handler[Request, Data, Item]) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		ctx := withRequest(req.Context(), w, req)
+		ctx := withResponseWriter(req.Context(), w)
 
 		defer func() {
 			if rec := recover(); rec != nil {

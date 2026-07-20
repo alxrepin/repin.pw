@@ -11,11 +11,6 @@ import (
 	"github.com/gorilla/mux"
 )
 
-type RequestPaginate struct {
-	Page  int `json:"page"`
-	Limit int `json:"limit"`
-}
-
 func decodeRequest[T any](r *http.Request) (T, error) {
 	var request T
 

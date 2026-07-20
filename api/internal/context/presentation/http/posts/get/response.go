@@ -110,8 +110,7 @@ func toAdjacent(post *domain.Post, mediaURL string) *Adjacent {
 	}
 
 	if post.Text != nil {
-		excerpt := text.Excerpt(*post.Text, excerptRunes)
-		adj.Text = &excerpt
+		adj.Text = new(text.Excerpt(*post.Text, excerptRunes))
 	}
 
 	for _, m := range post.Media {

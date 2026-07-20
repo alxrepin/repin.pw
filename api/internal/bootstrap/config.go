@@ -10,9 +10,6 @@ import (
 	"repin/internal/pkg/migration"
 )
 
-// Sections shared by the per-binary configs below. Every env tag lives here
-// exactly once, so a narrow config can never drift from the full one.
-
 type HTTP struct {
 	Host string `env:"HTTP_SERVER_HOST" envDefault:"0.0.0.0"`
 	Port string `env:"HTTP_SERVER_PORT" envDefault:"8080"`
@@ -55,17 +52,12 @@ type Storage struct {
 	Bucket    string `env:"MINIO_BUCKET"`
 }
 
-// CLIConfig is everything cmd/cli reads. Migrations touch neither Telegram nor
-// object storage, so demanding those credentials would be a lie.
 type CLIConfig struct {
 	Database  Database
 	Migration Migration
 	Logger    Logger
 }
 
-// APIConfig is everything cmd/http reads: it only ever queries Postgres. Media
-// is served straight from the bucket's public origin, so the API needs the
-// address to build links but no storage credentials.
 type APIConfig struct {
 	HTTP     HTTP
 	Database Database
@@ -78,16 +70,8 @@ func (c APIConfig) MediaBaseURL() string {
 	return strings.TrimRight(stringOrEmpty(c.MediaURL), "/")
 }
 
-// Config is the full set, used by the binaries that genuinely need it all:
-// cmd/sync, cmd/bot and cmd/worker.
 type Config struct {
-	AppEnv string `env:"APP_ENV" envDefault:"develop"`
-
-	HTTP HTTP
-
 	Database Database
-
-	Migration Migration
 
 	Telegram struct {
 		AppID          int           `env:"TELEGRAM_API_ID"`
@@ -158,14 +142,6 @@ func (c Config) PGConfig() db.Config {
 	return c.Database.Config()
 }
 
-func (c Config) MigrationConfig() migration.Config {
-	return c.Migration.Config()
-}
-
 func (c Config) LoggerConfig() logger.Config {
 	return c.Logger.Config()
-}
-
-func (c Config) HTTPConfig() httpx.Config {
-	return c.HTTP.Config()
 }

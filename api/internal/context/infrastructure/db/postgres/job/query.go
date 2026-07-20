@@ -27,7 +27,7 @@ const (
 			FOR UPDATE SKIP LOCKED
 			LIMIT 1
 		)
-		RETURNING id, kind, dedup_key, payload, status, attempts, max_attempts, run_at, last_error, created_at`
+		RETURNING id, kind, dedup_key, payload, attempts, max_attempts, run_at, last_error, created_at`
 
 	completeQuery = `
 		DELETE FROM %s

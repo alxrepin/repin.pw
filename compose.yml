@@ -34,10 +34,6 @@ services:
     depends_on:
       - minio
     env_file: ".env"
-    # `mc anonymous set download` also grants ListBucket, which lets anyone
-    # enumerate every stored object. The bucket is reachable from the internet,
-    # so grant GetObject only. $$ escapes compose interpolation: the shell in
-    # the container expands these, and the mc image has no sed or envsubst.
     entrypoint:
       - "/bin/sh"
       - "-c"
@@ -52,8 +48,6 @@ services:
       context: "./api"
       dockerfile: "../.docker/container/api/Dockerfile"
     command: ["./bin/cli", "migrations", "up"]
-    # cmd/cli loads bootstrap.CLIConfig — migrations need the database and
-    # nothing else, so no env_file and no credentials it would never use.
     environment:
       DATABASE_URL: "${DATABASE_URL}"
     depends_on:
@@ -66,10 +60,6 @@ services:
       context: "./api"
       dockerfile: "../.docker/container/api/Dockerfile"
     command: ["./bin/http"]
-    # cmd/http loads bootstrap.APIConfig: Postgres only. Media is served from
-    # the bucket's own origin, so the API needs that address but none of the
-    # storage credentials — this is the one service facing the internet. Host
-    # and port fall back to 0.0.0.0:8080 from the config defaults.
     environment:
       DATABASE_URL: "${DATABASE_URL}"
       MEDIA_BASE_URL: "${MEDIA_BASE_URL:-}"
@@ -92,6 +82,7 @@ services:
       PORT: "3000"
       API_INTERNAL_URL: "http://api:8080"
       PUBLIC_SITE_URL: "${PUBLIC_SITE_URL:-}"
+      YANDEX_METRIKA_ID: "${YANDEX_METRIKA_ID:-}"
     volumes:
       - "./.docker/data/favicon:/app/dist/client/favicon:ro"
     ports:
@@ -108,7 +99,6 @@ services:
     restart: unless-stopped
     env_file: ".env"
     environment:
-      # Container path, paired with the mount below.
       FAVICON_DIR: "/app/var/favicon"
     volumes:
       - "./.docker/data/telegram:/app/var/telegram"
@@ -127,7 +117,6 @@ services:
     restart: unless-stopped
     env_file: ".env"
     environment:
-      # Sent as the HTTP-Referer header so OpenRouter can attribute the traffic.
       OPENROUTER_REFERER: "${PUBLIC_SITE_URL:-}"
     volumes:
       - "./.docker/data/telegram:/app/var/telegram"
@@ -147,7 +136,6 @@ services:
     tty: true
     env_file: ".env"
     environment:
-      # Container path, paired with the mount below.
       FAVICON_DIR: "/app/var/favicon"
     volumes:
       - "./.docker/data/telegram:/app/var/telegram"

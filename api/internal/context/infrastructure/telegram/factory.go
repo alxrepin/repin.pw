@@ -171,8 +171,7 @@ func (f *RawMessageFactory) convertEntities(entities []tg.MessageEntityClass) []
 		case *tg.MessageEntityPre:
 			entity = domain.RawMessageEntity{Type: domain.EntityTypePre, Offset: ent.Offset, Length: ent.Length}
 			if ent.Language != "" {
-				lang := ent.Language
-				entity.Language = &lang
+				entity.Language = new(ent.Language)
 			}
 		case *tg.MessageEntityCustomEmoji:
 			entity = domain.RawMessageEntity{Type: domain.EntityTypeCustomEmoji, Offset: ent.Offset, Length: ent.Length, CustomEmojiID: &ent.DocumentID}

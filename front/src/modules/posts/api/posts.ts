@@ -44,6 +44,16 @@ function stripTags(html: string): string {
   return html.replace(/<[^>]*>/g, '').trim();
 }
 
+function normalizeTitle(title: string): string {
+  const trimmed = title.trim();
+  const last = trimmed.slice(-1);
+
+  if (last !== '.' && last !== ':') return trimmed;
+  if (trimmed.endsWith('..')) return trimmed;
+
+  return trimmed.slice(0, -1);
+}
+
 function toMedia(item: MediaItem): PostMedia {
   return {
     id: item.id,
@@ -66,7 +76,7 @@ function toSnippet(item: ListItem): PostSnippet {
   return {
     id: item.id,
     groupId: item.group_id,
-    title: item.title ?? 'Без названия',
+    title: item.title ? normalizeTitle(item.title) : 'Без названия',
     url: item.url ?? String(item.id),
     excerpt: stripTags(item.text ?? ''),
     cover: item.cover ? toCover(item.cover) : undefined,
@@ -78,7 +88,7 @@ function toPost(data: PostData): Post {
   return {
     id: data.id,
     groupId: data.group_id,
-    title: data.title ?? 'Без названия',
+    title: data.title ? normalizeTitle(data.title) : 'Без названия',
     url: data.url ?? String(data.id),
     text: data.text ?? '',
     media: data.media?.map(toMedia) ?? [],

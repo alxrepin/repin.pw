@@ -19,8 +19,6 @@ const (
 		FROM %s
 		WHERE id = :id`
 
-	// updateSEOQuery touches the SEO columns only, so a job writing generated
-	// metadata cannot clobber a concurrent re-import of the post body.
 	updateSEOQuery = `
 		UPDATE %s SET
 			seo_title       = :seo_title,
