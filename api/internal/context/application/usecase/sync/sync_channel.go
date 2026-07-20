@@ -118,7 +118,7 @@ func (uc *SyncChannel) sync(ctx context.Context, username string) error {
 
 	log.Info().Int("messages", len(messages)).Msg("history fetched")
 
-	stats := uc.ImportMessages(ctx, messages)
+	stats := uc.ImportMessages(ctx, messages, username)
 
 	for _, m := range messages {
 		channel.LastMessageID = max(channel.LastMessageID, int64(m.ID))
@@ -153,13 +153,13 @@ func (uc *SyncChannel) lastMessageID(ctx context.Context) (int, error) {
 	return int(channel.LastMessageID), nil
 }
 
-func (uc *SyncChannel) ImportMessages(ctx context.Context, messages []domain.RawMessage) Stats {
+func (uc *SyncChannel) ImportMessages(ctx context.Context, messages []domain.RawMessage, channel string) Stats {
 	log := zerolog.Ctx(ctx)
 
 	var stats Stats
 
 	for _, group := range groupMessages(messages) {
-		result, err := uc.importGroup(ctx, group)
+		result, err := uc.importGroup(ctx, group, channel)
 		if err != nil {
 			stats.Errors++
 
@@ -210,12 +210,12 @@ type queued struct {
 	seo      int
 }
 
-func (uc *SyncChannel) importGroup(ctx context.Context, group []domain.RawMessage) (queued, error) {
+func (uc *SyncChannel) importGroup(ctx context.Context, group []domain.RawMessage, channel string) (queued, error) {
 	log := zerolog.Ctx(ctx)
 
 	postID := int64(group[0].ID)
 
-	post := uc.buildPost(postID, group)
+	post := uc.buildPost(postID, group, channel)
 	if post == nil {
 		return queued{}, nil // nothing publishable: no title and no media
 	}
@@ -276,7 +276,7 @@ func (uc *SyncChannel) importGroup(ctx context.Context, group []domain.RawMessag
 	return result, nil
 }
 
-func (uc *SyncChannel) buildPost(postID int64, group []domain.RawMessage) *domain.Post {
+func (uc *SyncChannel) buildPost(postID int64, group []domain.RawMessage, channel string) *domain.Post {
 	post := &domain.Post{
 		ID:        postID,
 		GroupID:   group[0].GroupID,
@@ -307,7 +307,7 @@ func (uc *SyncChannel) buildPost(postID int64, group []domain.RawMessage) *domai
 		post.RawText = caption.Text
 		post.Entities = caption.Entities
 
-		title, body := uc.renderer.Render(*caption.Text, caption.Entities)
+		title, body := uc.renderer.Render(*caption.Text, caption.Entities, channel)
 
 		post.Text = &body
 

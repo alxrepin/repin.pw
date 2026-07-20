@@ -1,7 +1,25 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
+import { useRouter } from 'vue-router';
 import type { PostMedia } from '../types';
 import PostMediaBlock from './PostMediaBlock.vue';
+
+const router = useRouter();
+
+function onBodyClick(event: MouseEvent): void {
+  if (event.defaultPrevented || event.button !== 0) return;
+  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+  const anchor = (event.target as HTMLElement | null)?.closest('a');
+  if (!anchor || anchor.target) return;
+
+  const href = anchor.getAttribute('href');
+  // Same-origin only: "//host" is another site wearing a relative-looking coat.
+  if (!href?.startsWith('/') || href.startsWith('//')) return;
+
+  event.preventDefault();
+  router.push(href);
+}
 
 const props = defineProps<{
   title: string;
@@ -71,7 +89,7 @@ onMounted(() => {
       {{ shownTitle }}
     </h1>
     <PostMediaBlock v-if="media?.length && !invertMedia" :media="media" class="mb-8" />
-    <div class="post-body prose max-w-none">
+    <div class="post-body prose max-w-none" @click="onBodyClick">
       <p v-if="overflow">{{ overflow }}</p>
       <div v-html="html" />
     </div>

@@ -20,5 +20,10 @@ export function useHttpStatus() {
     set(code: number) {
       state.status.code = code;
     },
+
+    redirect(location: string, code = 301) {
+      state.status.code = code;
+      state.status.location = location;
+    },
   };
 }

@@ -38,5 +38,7 @@ export default defineConfig({
     'ui-button':
       'inline-flex items-center justify-center gap-2 rounded-xl font-medium transition-colors cursor-pointer',
     'ui-card': 'rounded-3xl bg-white shadow-[0_0_20px_rgba(0,0,0,0.06)]',
+    'ui-zoom':
+      'transition-transform duration-300 ease-out group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100',
   },
 });

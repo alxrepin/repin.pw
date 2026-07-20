@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
+	"strings"
 
 	"repin/internal/context/domain"
 )
@@ -15,6 +17,7 @@ const (
 
 type postLister interface {
 	List(ctx context.Context, page, limit int) ([]domain.Post, int, error)
+	GetByID(ctx context.Context, id int64) (*domain.Post, error)
 	GetByURL(ctx context.Context, url string) (*domain.Post, error)
 	Prev(ctx context.Context, id int64) (*domain.Post, error)
 	Next(ctx context.Context, id int64) (*domain.Post, error)
@@ -70,8 +73,27 @@ type PostDetails struct {
 	Next *domain.Post
 }
 
+func (s *PostService) resolve(ctx context.Context, slug string) (*domain.Post, error) {
+	if id, ok := leadingID(slug); ok {
+		return s.posts.GetByID(ctx, id)
+	}
+
+	return s.posts.GetByURL(ctx, slug)
+}
+
+func leadingID(slug string) (int64, bool) {
+	digits, _, _ := strings.Cut(slug, "-")
+
+	id, err := strconv.ParseInt(digits, 10, 64)
+	if err != nil || id <= 0 {
+		return 0, false
+	}
+
+	return id, true
+}
+
 func (s *PostService) Get(ctx context.Context, slug string) (PostDetails, error) {
-	post, err := s.posts.GetByURL(ctx, slug)
+	post, err := s.resolve(ctx, slug)
 	if err != nil {
 		return PostDetails{}, fmt.Errorf("get post: %w", err)
 	}

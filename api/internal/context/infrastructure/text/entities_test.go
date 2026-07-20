@@ -50,7 +50,7 @@ func TestExcerptTruncatesAfterDecoding(t *testing.T) {
 
 func TestRendererProducesPlainTextTitle(t *testing.T) {
 	raw := "> в Китае ничего не понятно\n\n> там не работают карты"
-	title, body := NewRenderer().Render(raw, []domain.RawMessageEntity{})
+	title, body := NewRenderer().Render(raw, []domain.RawMessageEntity{}, "")
 
 	if strings.Contains(title, "&") {
 		t.Errorf("title still carries an entity: %q", title)

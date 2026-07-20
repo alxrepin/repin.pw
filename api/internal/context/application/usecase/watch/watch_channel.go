@@ -20,7 +20,7 @@ type rawMessages interface {
 }
 
 type importer interface {
-	ImportMessages(ctx context.Context, messages []domain.RawMessage) syncuc.Stats
+	ImportMessages(ctx context.Context, messages []domain.RawMessage, channel string) syncuc.Stats
 }
 
 type postStore interface {
@@ -87,7 +87,7 @@ func (uc *WatchChannel) SyncPosts(ctx context.Context, username string, ids []in
 		return nil
 	}
 
-	stats := uc.importer.ImportMessages(ctx, relevant)
+	stats := uc.importer.ImportMessages(ctx, relevant, username)
 	if stats.Errors > 0 {
 		return fmt.Errorf("import messages %v: %d group(s) failed", ids, stats.Errors)
 	}

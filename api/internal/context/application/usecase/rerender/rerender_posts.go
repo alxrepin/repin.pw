@@ -15,6 +15,10 @@ type postStore interface {
 	Upsert(ctx context.Context, post *domain.Post) error
 }
 
+type channelStore interface {
+	Get(ctx context.Context) (*domain.Channel, error)
+}
+
 type txRunner interface {
 	RunInTx(ctx context.Context, fn func(ctx context.Context) error) error
 }
@@ -26,12 +30,13 @@ type Stats struct {
 
 type RerenderPosts struct {
 	posts    postStore
+	channels channelStore
 	tx       txRunner
 	renderer *text.Renderer
 }
 
-func NewRerenderPosts(posts postStore, tx txRunner) *RerenderPosts {
-	return &RerenderPosts{posts: posts, tx: tx, renderer: text.NewRenderer()}
+func NewRerenderPosts(posts postStore, channels channelStore, tx txRunner) *RerenderPosts {
+	return &RerenderPosts{posts: posts, channels: channels, tx: tx, renderer: text.NewRenderer()}
 }
 
 func (uc *RerenderPosts) Execute(ctx context.Context) (Stats, error) {
@@ -40,6 +45,11 @@ func (uc *RerenderPosts) Execute(ctx context.Context) (Stats, error) {
 	posts, err := uc.posts.All(ctx)
 	if err != nil {
 		return Stats{}, fmt.Errorf("load posts: %w", err)
+	}
+
+	channel, err := uc.channels.Get(ctx)
+	if err != nil {
+		return Stats{}, fmt.Errorf("load channel: %w", err)
 	}
 
 	var stats Stats
@@ -53,7 +63,7 @@ func (uc *RerenderPosts) Execute(ctx context.Context) (Stats, error) {
 				continue
 			}
 
-			title, body := uc.renderer.Render(*post.RawText, post.Entities)
+			title, body := uc.renderer.Render(*post.RawText, post.Entities, channel.Name)
 
 			post.Text = &body
 

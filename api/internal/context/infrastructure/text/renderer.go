@@ -18,8 +18,8 @@ func NewRenderer() *Renderer {
 	}
 }
 
-func (r *Renderer) Render(raw string, entities []domain.RawMessageEntity) (title, body string) {
-	normalized := r.normalizer.Normalize(raw, entities)
+func (r *Renderer) Render(raw string, entities []domain.RawMessageEntity, channel string) (title, body string) {
+	normalized := r.normalizer.Normalize(raw, entities, channel)
 	analyzed := r.headers.Analyze(normalized)
 	title, body = r.titles.Extract(analyzed)
 

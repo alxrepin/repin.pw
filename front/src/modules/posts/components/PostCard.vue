@@ -11,10 +11,10 @@ const publishedAt = formatPostDate(props.post.createdAt);
 <template>
   <RouterLink
     :to="`/posts/${post.url}`"
-    class="ui-card flex min-h-60 flex-col transition-shadow hover:shadow-[0_0_20px_rgba(0,0,0,0.12)] md:h-60 md:max-h-120 md:flex-row"
+    class="group ui-card flex min-h-60 flex-col transition-shadow hover:shadow-[0_0_20px_rgba(0,0,0,0.12)] md:h-60 md:max-h-120 md:flex-row"
   >
     <div v-if="post.cover" class="m-1 shrink-0 overflow-hidden rounded-3xl md:hidden">
-      <img :src="post.cover.url" alt="" loading="lazy" class="h-40 w-full object-cover" />
+      <img :src="post.cover.url" alt="" loading="lazy" class="ui-zoom h-40 w-full object-cover" />
     </div>
 
     <div
@@ -29,7 +29,7 @@ const publishedAt = formatPostDate(props.post.createdAt);
     </div>
 
     <div v-if="post.cover" class="m-1 hidden w-[30%] shrink-0 overflow-hidden rounded-3xl md:block">
-      <img :src="post.cover.url" alt="" loading="lazy" class="h-full w-full object-cover" />
+      <img :src="post.cover.url" alt="" loading="lazy" class="ui-zoom h-full w-full object-cover" />
     </div>
   </RouterLink>
 </template>

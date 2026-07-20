@@ -18,7 +18,11 @@ const post = await useAsyncData(`post:${slug}`, () => fetchPostRequest(slug));
 
 if (!post) {
   useHttpStatus().set(404);
+} else if (post.url !== slug && import.meta.env.SSR) {
+  useHttpStatus().redirect(`/posts/${post.url}`);
 }
+
+const canonicalSlug = post?.url ?? slug;
 
 const publishedAt = post ? formatPostDate(post.createdAt) : '';
 
@@ -27,7 +31,9 @@ const description = post?.seoDescription ?? post?.text.replace(/<[^>]*>/g, '').s
 const ogImage = post?.media.find(m => m.type === 'photo')?.url ?? channel.avatar ?? '';
 
 const origin = siteUrl();
-const canonicalLink = origin ? [{ rel: 'canonical', href: `${origin}/posts/${slug}` }] : [];
+const canonicalLink = origin
+  ? [{ rel: 'canonical', href: `${origin}/posts/${canonicalSlug}` }]
+  : [];
 
 useHead(
   post

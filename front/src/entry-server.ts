@@ -7,6 +7,7 @@ export interface RenderResult {
   headTags: string;
   state: string;
   statusCode: number;
+  redirect?: string;
 }
 
 export async function render(url: string): Promise<RenderResult> {
@@ -24,5 +25,6 @@ export async function render(url: string): Promise<RenderResult> {
     headTags: payload.headTags,
     state: state.serialize(),
     statusCode: state.status.code,
+    redirect: state.status.location,
   };
 }

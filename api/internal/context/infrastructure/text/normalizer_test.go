@@ -72,7 +72,7 @@ func TestNormalize(t *testing.T) {
 			entities: []domain.RawMessageEntity{
 				{Type: domain.EntityTypeTextLink, Offset: 0, Length: 4, URL: str(`https://x.com/?q="><script>`)},
 			},
-			want: `<a href="https://x.com/?q=&#34;&gt;&lt;script&gt;">link</a>`,
+			want: `<a href="https://x.com/?q=&#34;&gt;&lt;script&gt;" target="_blank" rel="noopener noreferrer">link</a>`,
 		},
 		{
 			name: "javascript scheme is dropped",
@@ -86,7 +86,7 @@ func TestNormalize(t *testing.T) {
 			name:     "bare url is linked with https fallback",
 			text:     "see example.com now",
 			entities: []domain.RawMessageEntity{ent(domain.EntityTypeURL, 4, 11)},
-			want:     `see <a href="https://example.com">example.com</a> now`,
+			want:     `see <a href="https://example.com" target="_blank" rel="noopener noreferrer">example.com</a> now`,
 		},
 		{
 			name: "overlapping entities stay properly nested",
@@ -146,7 +146,7 @@ func TestNormalize(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			if got := n.Normalize(tt.text, tt.entities); got != tt.want {
+			if got := n.Normalize(tt.text, tt.entities, ""); got != tt.want {
 				t.Errorf("Normalize() = %q, want %q", got, tt.want)
 			}
 		})
@@ -158,7 +158,7 @@ func TestRendererTitleAndBody(t *testing.T) {
 
 	r := NewRenderer()
 
-	title, body := r.Render("Заголовок. И сразу текст\nвторая строка", nil)
+	title, body := r.Render("Заголовок. И сразу текст\nвторая строка", nil, "")
 
 	if title != "Заголовок." {
 		t.Errorf("title = %q, want %q", title, "Заголовок.")
@@ -177,7 +177,7 @@ func TestRendererBlockquoteFirstLineIsNotTitle(t *testing.T) {
 
 	title, _ := r.Render("цитата\n\nтекст", []domain.RawMessageEntity{
 		{Type: domain.EntityTypeBlockquote, Offset: 0, Length: 6},
-	})
+	}, "")
 
 	if title != "" {
 		t.Errorf("title = %q, want empty: a quote is not a title", title)

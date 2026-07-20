@@ -62,7 +62,7 @@ function formatSize(bytes?: number): string {
             muted
             playsinline
             preload="metadata"
-            class="rounded-3xl"
+            class="ui-zoom rounded-3xl"
             :class="fitClass"
           />
           <span class="pointer-events-none absolute inset-0 grid place-items-center">
@@ -74,22 +74,27 @@ function formatSize(bytes?: number): string {
           </span>
         </button>
 
-        <video
+        <div
           v-else-if="item.type === 'gif'"
-          :src="item.url"
-          autoplay
-          muted
-          loop
-          playsinline
-          class="rounded-3xl"
-          :class="isGrid ? `${cellClass(index)} h-full w-full object-cover` : 'w-full'"
-        />
+          class="group overflow-hidden rounded-3xl"
+          :class="wrapClass(index)"
+        >
+          <video
+            :src="item.url"
+            autoplay
+            muted
+            loop
+            playsinline
+            class="ui-zoom rounded-3xl"
+            :class="fitClass"
+          />
+        </div>
 
         <button
           v-else
           type="button"
           aria-label="Открыть изображение"
-          class="block cursor-zoom-in overflow-hidden rounded-3xl"
+          class="group block cursor-zoom-in overflow-hidden rounded-3xl border border-black/5"
           :class="wrapClass(index)"
           @click="openLightbox(item)"
         >
@@ -98,7 +103,7 @@ function formatSize(bytes?: number): string {
             :width="item.width"
             :height="item.height"
             alt=""
-            class="rounded-3xl border border-black/5"
+            class="ui-zoom rounded-3xl"
             :class="fitClass"
           />
         </button>

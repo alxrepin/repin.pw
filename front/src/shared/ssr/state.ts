@@ -2,7 +2,7 @@ import { type InjectionKey, reactive } from 'vue';
 
 export interface StateManager {
   data: Record<string, unknown>;
-  status: { code: number };
+  status: { code: number; location?: string };
   resolve<T>(key: string, loader: () => Promise<T>): Promise<T>;
   serialize(): string;
 }
@@ -15,7 +15,7 @@ export function createStateManager(initial: Record<string, unknown> = {}): State
 
   return {
     data,
-    status: { code: 200 },
+    status: { code: 200 } as StateManager['status'],
 
     resolve<T>(key: string, loader: () => Promise<T>): Promise<T> {
       if (key in data) return Promise.resolve(data[key] as T);

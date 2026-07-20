@@ -31,12 +31,15 @@ type Normalizer struct{}
 
 func NewNormalizer() *Normalizer { return &Normalizer{} }
 
-func (n *Normalizer) Normalize(text string, entities []domain.RawMessageEntity) string {
+// Normalize renders the message. channel is the username the post came from,
+// used to recognise links pointing back into the same channel; empty disables
+// that rewriting and every link is then treated as external.
+func (n *Normalizer) Normalize(text string, entities []domain.RawMessageEntity, channel string) string {
 	if text == "" {
 		return ""
 	}
 
-	spans := buildSpans(text, entities)
+	spans := buildSpans(text, entities, channel)
 
 	// Boundaries chop the text into segments, each covered by a fixed set of
 	// entities; a segment's tag set is diffed against the previously open one.
@@ -92,7 +95,7 @@ func (n *Normalizer) Normalize(text string, entities []domain.RawMessageEntity) 
 	return reNewlineBeforeClose.ReplaceAllString(b.String(), "$1\n")
 }
 
-func buildSpans(text string, entities []domain.RawMessageEntity) []span {
+func buildSpans(text string, entities []domain.RawMessageEntity, channel string) []span {
 	spans := make([]span, 0, len(entities))
 
 	for _, e := range entities {
@@ -103,7 +106,7 @@ func buildSpans(text string, entities []domain.RawMessageEntity) []span {
 			continue
 		}
 
-		opening, closing, ok := tagFor(e, text[start:end])
+		opening, closing, ok := tagFor(e, text[start:end], channel)
 		if !ok {
 			continue
 		}
@@ -122,7 +125,7 @@ func buildSpans(text string, entities []domain.RawMessageEntity) []span {
 	return spans
 }
 
-func tagFor(e domain.RawMessageEntity, content string) (opening, closing string, ok bool) {
+func tagFor(e domain.RawMessageEntity, content string, channel string) (opening, closing string, ok bool) {
 	switch e.Type {
 	case domain.EntityTypeBold:
 		return "<strong>", "</strong>", true
@@ -159,7 +162,15 @@ func tagFor(e domain.RawMessageEntity, content string) (opening, closing string,
 			return "", "", false
 		}
 
-		return `<a href="` + html.EscapeString(href) + `">`, "</a>", true
+		// A link back into our own channel is a link to a page of this site, so
+		// it keeps the tab and gets handled by the router. Everything else
+		// leaves, and leaving opens a new tab. rel is not decoration there:
+		// without noopener the opened page can reach back through window.opener.
+		if internal, ok := internalPostHref(href, channel); ok {
+			return `<a href="` + html.EscapeString(internal) + `">`, "</a>", true
+		}
+
+		return `<a href="` + html.EscapeString(href) + `" target="_blank" rel="noopener noreferrer">`, "</a>", true
 	case domain.EntityTypeCustomEmoji:
 		if e.CustomEmojiID != nil {
 			return `<span data-emoji-id="` + strconv.FormatInt(*e.CustomEmojiID, 10) + `">`, "</span>", true
@@ -167,6 +178,41 @@ func tagFor(e domain.RawMessageEntity, content string) (opening, closing string,
 	}
 
 	return "", "", false
+}
+
+var telegramHosts = map[string]bool{"t.me": true, "telegram.me": true, "telegram.dog": true}
+
+// internalPostHref turns a link to a post of our own channel into a link to the
+// same post on this site. Telegram numbers the messages of a channel, and that
+// number is the post id here, so "t.me/<channel>/42" and "/posts/42" name the
+// same thing. Links to any other channel are left alone — they are external.
+func internalPostHref(href, channel string) (string, bool) {
+	if channel == "" {
+		return "", false
+	}
+
+	u, err := url.Parse(href)
+	if err != nil || !telegramHosts[strings.ToLower(u.Hostname())] {
+		return "", false
+	}
+
+	parts := strings.Split(strings.Trim(u.Path, "/"), "/")
+
+	// "/s/<channel>/<n>" is the web-preview form of the same link.
+	if len(parts) == 3 && strings.EqualFold(parts[0], "s") {
+		parts = parts[1:]
+	}
+
+	if len(parts) != 2 || !strings.EqualFold(parts[0], channel) {
+		return "", false
+	}
+
+	id, err := strconv.ParseInt(parts[1], 10, 64)
+	if err != nil || id <= 0 {
+		return "", false
+	}
+
+	return "/posts/" + strconv.FormatInt(id, 10), true
 }
 
 // safeHref validates a link target, allowing only benign schemes; scheme-less

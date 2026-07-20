@@ -8,6 +8,7 @@ interface RenderResult {
   headTags: string;
   state: string;
   statusCode: number;
+  redirect?: string;
 }
 
 const isProd = process.env.NODE_ENV === 'production';
@@ -86,6 +87,11 @@ app.use(async (req, res) => {
     }
 
     const rendered = await render(url);
+
+    if (rendered.redirect) {
+      res.redirect(rendered.statusCode, rendered.redirect);
+      return;
+    }
 
     const html = template
       .replace('<!--app-analytics-->', metrikaTag)
