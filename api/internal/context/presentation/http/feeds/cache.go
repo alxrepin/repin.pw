@@ -27,15 +27,20 @@ func (c *Controller) Refresh(ctx context.Context) error {
 		return fmt.Errorf("refresh sitemap: %w", err)
 	}
 
-	if snap.rss, err = c.buildRSS(ctx); err != nil {
+	src, err := c.load(ctx, max(rssLimit, llmsLimit, llmsFullLimit))
+	if err != nil {
+		return fmt.Errorf("refresh feeds: %w", err)
+	}
+
+	if snap.rss, err = c.renderRSS(src.head(rssLimit)); err != nil {
 		return fmt.Errorf("refresh rss: %w", err)
 	}
 
-	if snap.llms, err = c.buildLLMs(ctx); err != nil {
+	if snap.llms, err = c.renderLLMs(src.head(llmsLimit)); err != nil {
 		return fmt.Errorf("refresh llms: %w", err)
 	}
 
-	if snap.llmsFull, err = c.buildLLMsFull(ctx); err != nil {
+	if snap.llmsFull, err = c.renderLLMsFull(src.head(llmsFullLimit)); err != nil {
 		return fmt.Errorf("refresh llms-full: %w", err)
 	}
 

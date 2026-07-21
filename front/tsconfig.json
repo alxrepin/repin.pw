@@ -7,7 +7,7 @@
     "strict": true,
     "jsx": "preserve",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "types": ["node", "vite/client"],
+    "types": ["node", "vite/client", "bun"],
     "allowJs": false,
     "resolveJsonModule": true,
     "isolatedModules": true,

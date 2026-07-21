@@ -59,8 +59,15 @@ const app = express();
 
 // biome-ignore lint/suspicious/noExplicitAny: vite dev server has no static type here
 let vite: any;
+let prodTemplate = '';
+let prodRender: Render | undefined;
 
 if (isProd) {
+  const entryServer = './dist/server/entry-server.js';
+
+  prodTemplate = await fs.readFile('./dist/client/index.html', 'utf-8');
+  prodRender = (await import(entryServer)).render;
+
   app.use(compression());
   app.use('/assets', sirv('./dist/client/assets', { maxAge: 31536000, immutable: true }));
   app.use(sirv('./dist/client', { extensions: [], maxAge: 3600 }));
@@ -123,10 +130,9 @@ app.use(async (req, res) => {
     let template: string;
     let render: Render;
 
-    if (isProd) {
-      const entryServer = './dist/server/entry-server.js';
-      template = await fs.readFile('./dist/client/index.html', 'utf-8');
-      render = (await import(entryServer)).render;
+    if (isProd && prodRender) {
+      template = prodTemplate;
+      render = prodRender;
     } else {
       template = await fs.readFile('./index.html', 'utf-8');
       template = await vite.transformIndexHtml(url, template);

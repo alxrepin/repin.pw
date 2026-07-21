@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   check:
-    name: lint + typecheck + build
+    name: lint + typecheck + test + build
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -32,6 +32,8 @@ jobs:
         run: bun run lint:check
       - name: typecheck
         run: bun run typecheck
+      - name: test
+        run: bun test
       - name: build
         run: bun run build
         env:

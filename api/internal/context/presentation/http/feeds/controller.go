@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"sync/atomic"
+	"time"
 
 	"github.com/rs/zerolog"
 
@@ -51,6 +52,14 @@ func (c *Controller) siteDescription(src *source) string {
 type source struct {
 	Channel *domain.Channel
 	Posts   []domain.Post
+}
+
+func (s *source) head(n int) *source {
+	if len(s.Posts) <= n {
+		return s
+	}
+
+	return &source{Channel: s.Channel, Posts: s.Posts[:n]}
 }
 
 func (c *Controller) load(ctx context.Context, limit int) (*source, error) {
@@ -100,6 +109,12 @@ func (c *Controller) handle(contentType string, pick func(*snapshot) []byte, liv
 			w.Header().Set("Content-Type", contentType)
 			w.Header().Set("Cache-Control", "public, max-age=300")
 			w.Header().Set("Last-Modified", snap.generatedAt.Format(http.TimeFormat))
+
+			if notModifiedSince(r, snap.generatedAt) {
+				w.WriteHeader(http.StatusNotModified)
+				return
+			}
+
 			_, _ = w.Write(pick(snap))
 
 			return
@@ -117,6 +132,20 @@ func (c *Controller) handle(contentType string, pick func(*snapshot) []byte, liv
 		w.Header().Set("Cache-Control", "public, max-age=300")
 		_, _ = w.Write(body)
 	}
+}
+
+func notModifiedSince(r *http.Request, generatedAt time.Time) bool {
+	ims := r.Header.Get("If-Modified-Since")
+	if ims == "" {
+		return false
+	}
+
+	since, err := http.ParseTime(ims)
+	if err != nil {
+		return false
+	}
+
+	return !generatedAt.Truncate(time.Second).After(since)
 }
 
 func (c *Controller) Sitemap() http.HandlerFunc {
