@@ -8,6 +8,7 @@ import {
 
 import { errorRoutes } from '@/modules/error/routes';
 import { homeRoutes } from '@/modules/home/routes';
+import { rememberListPath } from '@/modules/posts/composables/useBackToList';
 import { postsRoutes } from '@/modules/posts/routes';
 
 const routes: RouteRecordRaw[] = [
@@ -19,7 +20,7 @@ const routes: RouteRecordRaw[] = [
 ];
 
 export function createAppRouter(): Router {
-  return createRouter({
+  const router = createRouter({
     history: import.meta.env.SSR ? createMemoryHistory() : createWebHistory(),
     routes,
     scrollBehavior(to, from, savedPosition) {
@@ -39,4 +40,12 @@ export function createAppRouter(): Router {
       return { top: 0 };
     },
   });
+
+  if (!import.meta.env.SSR) {
+    router.afterEach(to => {
+      if (to.name === 'home') rememberListPath(to.fullPath);
+    });
+  }
+
+  return router;
 }

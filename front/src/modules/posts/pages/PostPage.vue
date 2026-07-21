@@ -10,6 +10,9 @@ import { ErrorState, UiContainer } from '@/shared/ui';
 import { fetchPostRequest } from '../api/posts';
 import PostCard from '../components/PostCard.vue';
 import PostContent from '../components/PostContent.vue';
+import { useBackToList } from '../composables/useBackToList';
+
+const { target: backTarget, goBack } = useBackToList();
 
 const route = useRoute();
 const slug = String(route.params.slug);
@@ -87,13 +90,14 @@ useHead(
   <UiContainer size="sm" class="pt-28">
     <template v-if="post">
       <div class="mb-3 flex items-center justify-between text-gray-500">
-        <RouterLink
-          to="/"
+        <a
+          :href="backTarget"
           class="inline-flex items-center gap-2 transition-colors hover:text-gray-900"
+          @click="goBack"
         >
           <span class="i-mdi-arrow-left" />
           Назад
-        </RouterLink>
+        </a>
         <time :datetime="post.createdAt">{{ publishedAt }}</time>
       </div>
 
