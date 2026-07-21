@@ -23,6 +23,7 @@
     "src/**/*.tsx",
     "src/**/*.vue",
     "server.ts",
+    "server/**/*.ts",
     "vite.config.ts",
     "uno.config.ts"
   ],

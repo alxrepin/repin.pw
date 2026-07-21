@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import compression from 'compression';
 import express from 'express';
 import sirv from 'sirv';
+import { renderInstantView, TELEGRAM_BOT_UA } from './server/instantview';
 
 interface RenderResult {
   html: string;
@@ -14,9 +15,11 @@ interface RenderResult {
 const isProd = process.env.NODE_ENV === 'production';
 const port = Number(process.env.PORT ?? 3000);
 
-globalThis.__API_BASE__ = process.env.API_INTERNAL_URL ?? 'http://localhost:8080';
+const apiBase = process.env.API_INTERNAL_URL ?? 'http://localhost:8080';
+globalThis.__API_BASE__ = apiBase;
 
-globalThis.__SITE_URL__ = (process.env.PUBLIC_SITE_URL ?? '').trim().replace(/\/+$/, '');
+const siteUrl = (process.env.PUBLIC_SITE_URL ?? '').trim().replace(/\/+$/, '');
+globalThis.__SITE_URL__ = siteUrl;
 
 const metrikaId = readMetrikaId();
 
@@ -100,6 +103,17 @@ app.get('/robots.txt', (_req, res) => {
 
   res.set('Cache-Control', 'public, max-age=3600');
   res.type('text/plain').send(`${lines.join('\n')}\n`);
+});
+
+app.get('/posts/:slug', async (req, res, next) => {
+  const isTelegramBot = req.headers['user-agent'] === TELEGRAM_BOT_UA;
+  const isPreview = req.query['tg-iv'] === '1';
+  if (!isTelegramBot && !isPreview) return next();
+
+  const html = await renderInstantView(apiBase, siteUrl, req.params.slug);
+  if (!html) return next();
+
+  res.status(200).set({ 'Content-Type': 'text/html' }).send(html);
 });
 
 app.use(async (req, res) => {
