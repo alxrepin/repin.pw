@@ -9,6 +9,7 @@ interface MediaItem {
   type: string;
   url: string;
   mime_type?: string;
+  width?: number;
 }
 
 interface PostData {
@@ -54,7 +55,8 @@ function mediaHtml(media: MediaItem[], alt: string): string {
         return `<figure><img src="${esc(item.url)}" alt="${esc(alt)}" /></figure>`;
       }
       if (item.type === 'video') {
-        return `<figure><video src="${esc(item.url)}"></video></figure>`;
+        const width = item.width ? ` width="${item.width}"` : '';
+        return `<figure class="m_column"><div class="wrap"><video class="embed-viedo" src="${esc(item.url)}" playsinline="true" controls${width}></video></div></figure>`;
       }
       return '';
     })
