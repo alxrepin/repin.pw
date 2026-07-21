@@ -12,8 +12,7 @@ export function rememberListPath(path: string): void {
 
   try {
     sessionStorage.setItem(STORAGE_KEY, path);
-  } catch {
-  }
+  } catch {}
 }
 
 function readListPath(): string | null {

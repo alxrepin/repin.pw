@@ -1,7 +1,7 @@
 # Локальная разработка
 
 Docker нужен только для баз: Postgres и MinIO удобно поднять из общего
-компоуза, а сами сервисы запускать нативно — так быстрее цикл правок.
+компоуза, а сами сервисы запускать нативно
 
 ```bash
 make up        # или поднять только базы: docker compose up -d postgres minio minio-init
@@ -16,17 +16,17 @@ make migrate-up
 make build && ./bin/http  # API на :8080
 ```
 
-Цели `api/Makefile`:
+Команды `api/Makefile`:
 
-| Цель | Что делает |
-| --- | --- |
-| `setup` | ставит golangci-lint, качает зависимости |
-| `build` | собирает все бинарники в `bin/` (`http`, `sync`, `cli`, `bot`) |
-| `test` / `lint` | `go test ./...` / `golangci-lint` |
+| Команда                       | Что делает |
+|-------------------------------| --- |
+| `setup`                       | ставит golangci-lint, качает зависимости |
+| `build`                       | собирает все бинарники в `bin/` (`http`, `sync`, `cli`, `bot`) |
+| `test` / `lint`               | `go test ./...` / `golangci-lint` |
 | `migrate-up` / `migrate-down` | миграции через `./bin/cli` |
-| `migrate-create name=...` | новая пара up/down-миграций |
-| `sync` / `bot` | импорт истории / демон обновлений |
-| `rerender` | пересобрать посты из сохранённых сообщений — без похода в Telegram, удобно после правок нормализации текста |
+| `migrate-create name=...`     | новая пара up/down-миграций |
+| `sync` / `bot`                | импорт истории / демон обновлений |
+| `rerender`                    | пересобрать посты из сохранённых сообщений — без похода в Telegram, удобно после правок нормализации текста |
 
 ## Фронт (Bun 1.3)
 
@@ -47,16 +47,13 @@ bun run dev               # SSR-сервер с HMR на :3000
 | `typecheck` | `vue-tsc --noEmit` |
 | `lint` / `lint:check` | biome с фиксами / только проверка |
 
-Bun автоматически подхватывает `front/.env` — учитывайте это, если
-переопределяете переменные при запуске.
-
 ## CI
 
 `.github/workflows/` — два пайплайна с фильтрами по путям, гоняются только
 для затронутой части:
 
-- **api.yml** — `golangci-lint` (v2), `go build`, `go test`;
-- **web.yml** — `biome`, `vue-tsc`, сборка Vite.
+- **api.yml** — `golangci-lint` (v2), `go build`, `go test`
+- **web.yml** — `biome`, `vue-tsc`, сборка Vite
 
 Перед пушем локально: `make lint test` в `api/`,
-`bun run lint:check && bun run typecheck && bun run build` в `front/`.
+`bun run lint:check && bun run typecheck && bun run build` в `front/`

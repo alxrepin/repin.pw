@@ -1,23 +1,15 @@
 # Архитектура
 
-Два сервиса, у каждого одна ответственность: Go-API владеет данными,
-Vue-фронт — рендерингом. Общаются только по HTTP.
-
-```
-Telegram-канал ──(cmd/sync, cmd/bot)──▶ Postgres ◀──(cmd/http)── HTTP API ◀── Vue SSR (front) ◀── браузер
-                                  │        ▲                                    │
-                            очередь ▼      │ медиа, SEO                   /api/v1/* (CORS)
-                              jobs ──▶ cmd/worker ──▶ MinIO / OpenRouter
-```
+Два сервиса, у каждого одна ответственность: Go-API владеет данными, Vue-фронт — рендерингом, SSR. Общаются только по HTTP
 
 Принципы:
 
 - **Импорт — команда, а не конвейер.** История канала заливается разовым
-  `cmd/sync`; живые обновления ловит отдельный демон `cmd/bot` через MTProto.
+  `cmd/sync`; живые обновления ловит отдельный демон `cmd/bot` через MTProto
 - **Публикация ничего не ждёт.** Скачивание медиа и генерация SEO ставятся в
-  очередь `jobs` в одной транзакции с постом и выполняются `cmd/worker`.
+  очередь `jobs` в одной транзакции с постом и выполняются `cmd/worker`
 - **Фронт ходит в API напрямую.** Браузер — на публичный адрес API (CORS
-  разрешён), SSR-сервер — на внутренний (`API_INTERNAL_URL`).
+  разрешён), SSR-сервер — на внутренний (`API_INTERNAL_URL`)
 
 ## Сервисы (compose.yml)
 
@@ -36,7 +28,7 @@ Telegram-канал ──(cmd/sync, cmd/bot)──▶ Postgres ◀──(cmd/ht
 
 Go без внешних фреймворков: маленький встроенный «фреймворк» в
 `internal/pkg`, поверх него — слои domain / application / infrastructure /
-presentation. Зависимости направлены внутрь: domain ни о ком не знает.
+presentation. Зависимости направлены внутрь: domain ни о ком не знает
 
 ```
 api/
@@ -73,7 +65,7 @@ api/
 Vue 3 + Vite, SSR на Express под Bun. Один и тот же код рендерится на
 сервере (`entry-server.ts`) и гидрируется в браузере (`entry-client.ts`);
 данные, загруженные на сервере, передаются клиенту через
-`window.__INITIAL_STATE__` (`shared/ssr/state.ts`).
+`window.__INITIAL_STATE__` (`shared/ssr/state.ts`)
 
 ```
 front/
@@ -100,7 +92,7 @@ front/
 
 SEO обеспечивается на сервере: мета-теги и JSON-LD собираются через
 `@unhead/vue` при рендере, фиды проксируются из API, для краулера Telegram
-есть [отдельный рендер](instant-view.md).
+есть [отдельный рендер](instant-view.md)
 
 ## HTTP-эндпоинты
 
@@ -117,7 +109,7 @@ API (`api.repin.pw` / `localhost:8080`):
 
 Сайт (`repin.pw` / `localhost:3000`) отдаёт страницы и дополнительно:
 
-- проксирует фиды API под своим доменом (`/sitemap.xml` и т.д.);
-- генерирует `robots.txt`;
+- проксирует фиды API под своим доменом (`/sitemap.xml` и т.д.)
+- генерирует `robots.txt`
 - для `/posts/{slug}` с User-Agent Telegram отдаёт
-  [Instant View-разметку](instant-view.md).
+  [Instant View-разметку](instant-view.md)
