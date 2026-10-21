@@ -185,6 +185,7 @@ func (r *RawMessageRepository) uploadAvatar(ctx context.Context, client *telegra
 	location := &tg.InputPeerPhotoFileLocation{
 		Peer:    &tg.InputPeerChannel{ChannelID: tgChannel.ID, AccessHash: tgChannel.AccessHash},
 		PhotoID: photo.PhotoID,
+		Big:     true,
 	}
 
 	if _, err := downloader.NewDownloader().Download(client.API(), location).Stream(ctx, buf); err != nil {
